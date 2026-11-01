@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Logotipo PetTech: huella dentro de un escudo (cuidado + protección de datos). Diseño original. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <!-- Escudo -->
+    <path
+        android:fillColor="#00796B"
+        android:pathData="M48,6 L84,20 L84,46 C84,68 68,84 48,92 C28,84 12,68 12,46 L12,20 Z" />
+    <!-- Almohadilla principal -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48,50 C58,50 66,58 66,66 C66,73 60,76 54,74 C51,73 50,72 48,72 C46,72 45,73 42,74 C36,76 30,73 30,66 C30,58 38,50 48,50 Z" />
+    <!-- Dedos -->
+    <path android:fillColor="#FFFFFF" android:pathData="M30,40 m-6,0 a6,7 0,1 1,12 0 a6,7 0,1 1,-12 0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M41,31 m-6,0 a6,7 0,1 1,12 0 a6,7 0,1 1,-12 0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M55,31 m-6,0 a6,7 0,1 1,12 0 a6,7 0,1 1,-12 0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M66,40 m-6,0 a6,7 0,1 1,12 0 a6,7 0,1 1,-12 0" />
+</vector>

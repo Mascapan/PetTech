@@ -1,0 +1,51 @@
+# ==========================================================
+# PetTech — .gitignore (raíz del repositorio = carpeta Prototipo)
+# ==========================================================
+
+# --- Secretos y configuración local (NUNCA versionar) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.keystore
+*.jks
+local.properties
+secrets.properties
+
+# --- Python / Django (backend-api) ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+staticfiles/
+media/
+*.log
+
+# --- Android / Gradle (mobile-android) ---
+.gradle/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+output-metadata.json
+
+# --- IDE ---
+.idea/
+*.iml
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# --- Evidencias generadas automáticamente (se versiona solo lo curado) ---
+docs/evidencias/tmp/

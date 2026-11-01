@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    SOLO DEBUG (desarrollo local): permite HTTP hacia el backend en el equipo del desarrollador
+    (10.0.2.2 desde el emulador o la IP de la red local desde un teléfono físico).
+    Este archivo no se incluye en la versión release.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Primer plano del ícono adaptable (zona segura de 66dp centrada en 108dp). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:translateX="27"
+        android:translateY="27"
+        android:scaleX="0.5625"
+        android:scaleY="0.5625">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M48,50 C58,50 66,58 66,66 C66,73 60,76 54,74 C51,73 50,72 48,72 C46,72 45,73 42,74 C36,76 30,73 30,66 C30,58 38,50 48,50 Z" />
+        <path android:fillColor="#FFFFFF" android:pathData="M30,40 m-6,0 a6,7 0,1 1,12 0 a6,7 0,1 1,-12 0" />
+        <path android:fillColor="#FFFFFF" android:pathData="M41,31 m-6,0 a6,7 0,1 1,12 0 a6,7 0,1 1,-12 0" />
+        <path android:fillColor="#FFFFFF" android:pathData="M55,31 m-6,0 a6,7 0,1 1,12 0 a6,7 0,1 1,-12 0" />
+        <path android:fillColor="#FFFFFF" android:pathData="M66,40 m-6,0 a6,7 0,1 1,12 0 a6,7 0,1 1,-12 0" />
+    </group>
+</vector>

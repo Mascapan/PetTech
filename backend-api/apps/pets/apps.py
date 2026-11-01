@@ -1,0 +1,10 @@
+from django.apps import AppConfig
+
+
+class PetsConfig(AppConfig):
+    """Mascotas, identificación pública y carnet digital."""
+
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.pets"
+    label = "pets"
+    verbose_name = "Mascotas"

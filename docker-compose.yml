@@ -1,0 +1,42 @@
+# PetTech — entorno de DESARROLLO LOCAL con Docker Desktop (alternativa recomendada en Windows).
+# Levanta PostgreSQL 16 + PostGIS 3.4 y la API Django.
+#   docker compose up --build
+# Las credenciales se leen del archivo .env de esta carpeta (no versionado). Copia .env.example como .env.
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: pettech
+      POSTGRES_USER: pettech
+      POSTGRES_PASSWORD: ${PETTECH_DB_PASSWORD:?Define PETTECH_DB_PASSWORD en el archivo .env}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pettech_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pettech -d pettech"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./backend-api
+    command: >
+      sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.development
+      DJANGO_SECRET_KEY: ${PETTECH_DEV_SECRET_KEY:?Define PETTECH_DEV_SECRET_KEY en el archivo .env}
+      DJANGO_DEBUG: "True"
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,10.0.2.2,0.0.0.0
+      DATABASE_URL: postgis://pettech:${PETTECH_DB_PASSWORD}@db:5432/pettech
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-PetTech-Demo-2026}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend-api:/app
+
+volumes:
+  pettech_pgdata:

@@ -1,0 +1,625 @@
+openapi: 3.0.3
+info:
+  title: PetTech API
+  version: 1.0.0-fase1
+  description: 'API REST del prototipo PetTech (Proyecto de Título TIH184, INACAP).
+    Incremento 1: cuentas, autenticación y mascotas del tutor.'
+paths:
+  /api/v1/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: Inicia sesión con correo y contraseña (HU-01). Limitado a 10 intentos
+        por minuto.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+          description: ''
+  /api/v1/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      description: Revoca el token utilizado en la solicitud (cierre de sesión en
+        este dispositivo).
+      tags:
+      - auth
+      security:
+      - knoxApiToken: []
+      responses:
+        '204':
+          description: Sesión cerrada
+  /api/v1/auth/logout-all/:
+    post:
+      operationId: auth_logout_all_create
+      description: Revoca todos los tokens del usuario (cierre de sesión en todos
+        los dispositivos).
+      tags:
+      - auth
+      security:
+      - knoxApiToken: []
+      responses:
+        '204':
+          description: Sesiones cerradas
+  /api/v1/auth/me/:
+    get:
+      operationId: auth_me_retrieve
+      description: Devuelve los datos de la cuenta autenticada.
+      tags:
+      - auth
+      security:
+      - knoxApiToken: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/v1/auth/register/:
+    post:
+      operationId: auth_register_create
+      description: Crea una cuenta de TUTOR y devuelve un token de sesión (HU-01).
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+          description: ''
+  /api/v1/health/:
+    get:
+      operationId: health_retrieve
+      description: |-
+        Verificación de salud para monitoreo (NS-01) y para que la app compruebe la conexión.
+
+        Confirma que la base de datos responde y que la extensión PostGIS está disponible.
+        No expone versiones ni detalles internos.
+      tags:
+      - health
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+          description: ''
+  /api/v1/pets/:
+    get:
+      operationId: pets_list
+      description: |-
+        Mascotas del tutor autenticado (HU-02, RNF-02).
+
+        Autorización a nivel de objeto: el queryset se filtra SIEMPRE por el tutor del token.
+        Una mascota ajena responde 404 (no 403) para no revelar su existencia.
+      summary: Listar mis mascotas
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      tags:
+      - pets
+      security:
+      - knoxApiToken: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPetList'
+          description: ''
+    post:
+      operationId: pets_create
+      description: |-
+        Mascotas del tutor autenticado (HU-02, RNF-02).
+
+        Autorización a nivel de objeto: el queryset se filtra SIEMPRE por el tutor del token.
+        Una mascota ajena responde 404 (no 403) para no revelar su existencia.
+      summary: Registrar una mascota
+      tags:
+      - pets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetRequest'
+        required: true
+      security:
+      - knoxApiToken: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+          description: ''
+  /api/v1/pets/{id}/:
+    get:
+      operationId: pets_retrieve
+      description: |-
+        Mascotas del tutor autenticado (HU-02, RNF-02).
+
+        Autorización a nivel de objeto: el queryset se filtra SIEMPRE por el tutor del token.
+        Una mascota ajena responde 404 (no 403) para no revelar su existencia.
+      summary: Ver una mascota propia (carnet digital)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - pets
+      security:
+      - knoxApiToken: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+          description: ''
+    put:
+      operationId: pets_update
+      description: |-
+        Mascotas del tutor autenticado (HU-02, RNF-02).
+
+        Autorización a nivel de objeto: el queryset se filtra SIEMPRE por el tutor del token.
+        Una mascota ajena responde 404 (no 403) para no revelar su existencia.
+      summary: Reemplazar los datos de una mascota propia
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - pets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetRequest'
+        required: true
+      security:
+      - knoxApiToken: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+          description: ''
+    patch:
+      operationId: pets_partial_update
+      description: |-
+        Mascotas del tutor autenticado (HU-02, RNF-02).
+
+        Autorización a nivel de objeto: el queryset se filtra SIEMPRE por el tutor del token.
+        Una mascota ajena responde 404 (no 403) para no revelar su existencia.
+      summary: Editar una mascota propia
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - pets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPetRequest'
+      security:
+      - knoxApiToken: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+          description: ''
+    delete:
+      operationId: pets_destroy
+      description: |-
+        Mascotas del tutor autenticado (HU-02, RNF-02).
+
+        Autorización a nivel de objeto: el queryset se filtra SIEMPRE por el tutor del token.
+        Una mascota ajena responde 404 (no 403) para no revelar su existencia.
+      summary: Eliminar una mascota propia
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F-]{36}$
+        required: true
+      tags:
+      - pets
+      security:
+      - knoxApiToken: []
+      responses:
+        '204':
+          description: No response body
+components:
+  schemas:
+    AuthResponse:
+      type: object
+      description: Documentación OpenAPI de la respuesta de registro/inicio de sesión.
+      properties:
+        token:
+          type: string
+        expiry:
+          type: string
+          format: date-time
+        user:
+          $ref: '#/components/schemas/User'
+      required:
+      - expiry
+      - token
+      - user
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        database:
+          type: string
+        postgis:
+          type: string
+      required:
+      - database
+      - postgis
+      - status
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - password
+    PaginatedPetList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Pet'
+    PatchedPetRequest:
+      type: object
+      description: |-
+        Perfil de mascota (HU-02) y datos del carnet digital.
+
+        - El tutor NUNCA se recibe desde el cliente: se asigna a partir del token (perform_create).
+        - id y public_code son de solo lectura e inmutables.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Nombre
+          maxLength: 60
+        species:
+          allOf:
+          - $ref: '#/components/schemas/SpeciesEnum'
+          title: Especie
+        breed:
+          type: string
+          title: Raza
+          maxLength: 60
+        sex:
+          allOf:
+          - $ref: '#/components/schemas/SexEnum'
+          title: Sexo
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+          title: Fecha de nacimiento
+        birth_date_is_estimated:
+          type: boolean
+          title: Fecha aproximada
+          description: Indica si la fecha de nacimiento es estimada.
+        microchip_number:
+          type: string
+          title: Número de microchip (declarado)
+          description: Declarado por el tutor; PetTech no lo verifica contra el Registro
+            Nacional.
+          pattern: ^\d{15}$
+          maxLength: 15
+        general_notes:
+          type: string
+          title: Antecedentes generales declarados por el tutor
+          maxLength: 1000
+    Pet:
+      type: object
+      description: |-
+        Perfil de mascota (HU-02) y datos del carnet digital.
+
+        - El tutor NUNCA se recibe desde el cliente: se asigna a partir del token (perform_create).
+        - id y public_code son de solo lectura e inmutables.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        public_code:
+          type: string
+          readOnly: true
+          title: Código PetTech
+          description: Identificador público para compartir con la veterinaria. No
+            otorga acceso.
+        name:
+          type: string
+          title: Nombre
+          maxLength: 60
+        species:
+          allOf:
+          - $ref: '#/components/schemas/SpeciesEnum'
+          title: Especie
+        species_label:
+          type: string
+          readOnly: true
+        breed:
+          type: string
+          title: Raza
+          maxLength: 60
+        sex:
+          allOf:
+          - $ref: '#/components/schemas/SexEnum'
+          title: Sexo
+        sex_label:
+          type: string
+          readOnly: true
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+          title: Fecha de nacimiento
+        birth_date_is_estimated:
+          type: boolean
+          title: Fecha aproximada
+          description: Indica si la fecha de nacimiento es estimada.
+        microchip_number:
+          type: string
+          title: Número de microchip (declarado)
+          description: Declarado por el tutor; PetTech no lo verifica contra el Registro
+            Nacional.
+          pattern: ^\d{15}$
+          maxLength: 15
+        general_notes:
+          type: string
+          title: Antecedentes generales declarados por el tutor
+          maxLength: 1000
+        data_origin:
+          type: string
+          readOnly: true
+          description: 'Origen de los datos del perfil: siempre declarados por el
+            tutor.'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Creado el
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Actualizado el
+      required:
+      - created_at
+      - data_origin
+      - id
+      - name
+      - public_code
+      - sex_label
+      - species
+      - species_label
+      - updated_at
+    PetRequest:
+      type: object
+      description: |-
+        Perfil de mascota (HU-02) y datos del carnet digital.
+
+        - El tutor NUNCA se recibe desde el cliente: se asigna a partir del token (perform_create).
+        - id y public_code son de solo lectura e inmutables.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Nombre
+          maxLength: 60
+        species:
+          allOf:
+          - $ref: '#/components/schemas/SpeciesEnum'
+          title: Especie
+        breed:
+          type: string
+          title: Raza
+          maxLength: 60
+        sex:
+          allOf:
+          - $ref: '#/components/schemas/SexEnum'
+          title: Sexo
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+          title: Fecha de nacimiento
+        birth_date_is_estimated:
+          type: boolean
+          title: Fecha aproximada
+          description: Indica si la fecha de nacimiento es estimada.
+        microchip_number:
+          type: string
+          title: Número de microchip (declarado)
+          description: Declarado por el tutor; PetTech no lo verifica contra el Registro
+            Nacional.
+          pattern: ^\d{15}$
+          maxLength: 15
+        general_notes:
+          type: string
+          title: Antecedentes generales declarados por el tutor
+          maxLength: 1000
+      required:
+      - name
+      - species
+    RegisterRequest:
+      type: object
+      description: |-
+        Registro de TUTORES (HU-01).
+
+        El rol no es elegible por el cliente: las cuentas profesionales se crean y verifican
+        desde el panel de administración (Fase 2). Cualquier campo "role" enviado se ignora.
+      properties:
+        full_name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        accept_privacy_policy:
+          type: boolean
+          writeOnly: true
+      required:
+      - accept_privacy_policy
+      - email
+      - full_name
+      - password
+    RoleEnum:
+      enum:
+      - TUTOR
+      - PROFESSIONAL
+      - ADMIN
+      type: string
+      description: |-
+        * `TUTOR` - Tutor (propietario de mascotas)
+        * `PROFESSIONAL` - Profesional veterinario
+        * `ADMIN` - Administrador de PetTech
+    SexEnum:
+      enum:
+      - MALE
+      - FEMALE
+      - UNKNOWN
+      type: string
+      description: |-
+        * `MALE` - Macho
+        * `FEMALE` - Hembra
+        * `UNKNOWN` - No informado
+    SpeciesEnum:
+      enum:
+      - DOG
+      - CAT
+      type: string
+      description: |-
+        * `DOG` - Perro
+        * `CAT` - Gato
+    User:
+      type: object
+      description: Datos públicos de la cuenta propia (nunca incluye contraseña ni
+        tokens).
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+          title: Correo electrónico
+        full_name:
+          type: string
+          readOnly: true
+          title: Nombre completo
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+          title: Rol
+        role_label:
+          type: string
+          readOnly: true
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Fecha de registro
+      required:
+      - date_joined
+      - email
+      - full_name
+      - id
+      - role
+      - role_label
+  securitySchemes:
+    knoxApiToken:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Token-based authentication with required prefix "Token"

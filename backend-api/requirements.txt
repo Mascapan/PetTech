@@ -1,0 +1,14 @@
+# PetTech backend — dependencias de ejecución (versiones acotadas para reproducibilidad)
+# Django 5.2 es versión LTS (soporte de seguridad hasta abril de 2028).
+Django>=5.2,<5.3
+djangorestframework>=3.16,<3.17
+# Tokens con hash en BD, expiración y revocación por dispositivo (ver docs/DECISIONES.md, DEC-006)
+django-rest-knox>=5.0,<6
+# Especificación OpenAPI de la API (RNF-07)
+drf-spectacular>=0.28,<0.29
+# Driver PostgreSQL (psycopg 3)
+psycopg[binary]>=3.2,<3.3
+# Variables de entorno / .env (separación de ambientes, sin secretos en Git)
+django-environ>=0.12,<0.13
+# Hash de contraseñas Argon2id (recomendación OWASP Password Storage) — RNF-01
+argon2-cffi>=23.1
