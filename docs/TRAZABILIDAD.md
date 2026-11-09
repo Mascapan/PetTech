@@ -39,16 +39,40 @@ profesor (causa propuesta **C6**). Los elementos marcados *(propuesto)* deben fo
 | Sesión cifrada (MASVS-STORAGE) | `TokenCipher.kt`, `SessionStore.kt`, `SessionManager.kt` | arnés de `SessionManager` (restaurar / 401 / expiración) | `pruebas_android_dominio.md` | 🟡 cifrado Keystore solo verificable en dispositivo |
 | Comunicación Android–API | `ApiService.kt`, `AuthInterceptor.kt` | `smoke_test_api.py` reproduce las mismas llamadas HTTP | `smoke_test_api.md` | ⏳ falta ejecución desde emulador |
 
-## 3. Requisitos pendientes → fase planificada
+## 2b. Incremento 2 (8-11-2026): ficha clínica, acceso por código PetTech, búsqueda y app según boceto
 
-| Requisito | Fase | Prueba prevista |
+| Requisito | Componente de software | Pruebas automatizadas | Estado |
+|---|---|---|---|
+| HU-01 recuperación de acceso por correo | `accounts/services.start/confirm_password_reset`, `PasswordResetCode`; app `ForgotPasswordScreen.kt` | `accounts/tests/test_password_reset.py` (4) | ✅ backend · 🟡 app sin compilar |
+| HU-03 antecedentes declarados (sin fechas futuras, próxima fecha) | `clinical_records` (`Origin.OWNER_DECLARED`); app `EntryFormScreen.kt` | `test_tutor_registra_antecedente_declarado`, `test_no_acepta_fechas_futuras_ni_proxima_anterior` | ✅ / 🟡 |
+| HU-04 historial cronológico, filtro por tipo, próxima fecha | `services.current_entries`, `build_record_payload` (resumen + próximas fechas); app `ClinicalRecordScreen.kt` | `test_historial_multiclinica_y_filtro_por_tipo` | ✅ / 🟡 |
+| Retroalimentación: ficha estandarizada (alergias, patologías crónicas, peso, cirugías, fármacos) | `EntryType` (8 tipos), `summary` | `test_profesional_registra_y_el_tutor_ve_quien_donde_cuando`, `test_peso_obligatorio_en_registro_de_peso` | ✅ / 🟡 |
+| HU-07 búsqueda por cercanía (permiso solo al buscar; punto alternativo) | `clinics/services.search` (PostGIS `dwithin` + `Distance`); app `ClinicSearchScreen.kt`, `LocationProvider.kt` | `test_busqueda_por_cercania_respeta_el_radio_e_informa_distancia` | ✅ / 🟡 |
+| HU-08 filtros combinables; "abierto según horario declarado"; vacío comunicado | `is_open_at` (incluye franjas nocturnas y 24 h), filtros `emergency/open_now/service` | `OpeningHoursTests` (4), `test_filtros_combinables`, `test_resultado_vacio_es_valido` | ✅ / 🟡 |
+| Boceto vista 5: priorizar abiertas a la hora de consulta | orden `(no abierta, distancia)` en `search` | `test_abiertos_segun_horario_aparecen_primero` | ✅ |
+| HU-09 ficha con origen y fecha de verificación; antigüedad destacada; sin cupos | `ClinicSerializer` (`info_origin`, `verified_at`, `is_stale`); app `ClinicDetailScreen.kt` | `test_ficha_incluye_origen_y_fecha_de_verificacion`, `test_informacion_antigua_se_marca` | ✅ / 🟡 |
+| HU-10 mapa y ruta externa | app `ClinicsMap` (Maps Compose) + `openDirections` (intent) | manual (requiere clave `MAPS_API_KEY`) | 🟡 |
+| HU-11 / HU-12 catálogo con bitácora, estados de verificación, umbral configurable | `ClinicAdmin` (LogEntry de Django Admin), `Clinic.info_origin`, `CLINIC_STALE_DAYS` | revisión manual en Admin | 🟡 |
+| HU-15 profesionales verificados por establecimiento | `ProfessionalMembership`, `access.membership_for` | `test_profesional_sin_vinculo_verificado_no_puede_solicitar` | ✅ |
+| HU-16 solicitud por código PetTech (tolerante al dictado) | `access_control/services.request_access`; app `ProfessionalHomeScreen.kt` | `test_profesional_solicita_con_codigo_tolerante_al_dictado`, `test_codigo_inexistente_y_formato_invalido` | ✅ / 🟡 |
+| HU-17 / HU-18 aprobar, rechazar, revocar; expiración 24 h | `services.decide/revoke`, `AccessRequest.effective_status`; app `AccessScreen.kt` | `test_flujo_completo_aprobar_consultar_revocar`, `test_autorizacion_expira`, `test_rechazo_no_concede_acceso`, `test_otro_tutor_no_puede_aprobar` | ✅ / 🟡 |
+| RN-01 código ≠ autorización | `require_active_grant` en cada operación | `test_conocer_el_codigo_no_da_acceso_a_la_ficha` | ✅ |
+| HU-19..HU-21 consulta y registro profesional multiclínica | `ProfessionalRecordView`, `ProfessionalEntryCreateView` | `test_historial_multiclinica_y_filtro_por_tipo` | ✅ / 🟡 |
+| HU-22 / RNF-11 / RN-14 correcciones versionadas, solo misma clínica | `services.correct`, `ClinicalEntry.save/delete` inmutables | `test_correccion_conserva_version_anterior`, `test_otra_clinica_no_corrige_registros_ajenos`, `test_registros_son_inmutables_en_el_modelo` | ✅ |
+| HU-23 el tutor ve quién, dónde y cuándo | `author_name`, `clinic_name`, `origin` en cada entrada | `test_profesional_registra_y_el_tutor_ve_quien_donde_cuando` | ✅ / 🟡 |
+| HU-24 / RNF-09 bitácora visible e inmutable (incluye denegados) | `AuditEvent` (solo inserción), `PetAuditLogView` | `test_tutor_ve_bitacora_de_su_mascota`, `test_bitacora_no_se_modifica` | ✅ / 🟡 |
+| RN-11 admin sin acceso clínico | `IsTutor`/`IsProfessional`; admins de solo lectura | `test_tutor_ajeno_y_administrador_sin_acceso` | ✅ |
+| C-03 eliminar mascota sin borrar registros de veterinarias | `PetViewSet.perform_destroy` → 409 | `test_mascota_con_registros_profesionales_no_se_elimina`, `test_mascota_solo_con_declarados_se_elimina` | ✅ (DEC-009 sigue pendiente para la cuenta) |
+
+Total backend: **91 pruebas automatizadas, 91 OK** (PostgreSQL 16 + PostGIS 3.4, 8-11-2026).
+
+## 3. Requisitos pendientes
+
+| Requisito | Situación | Próximo paso |
 |---|---|---|
-| HU-15 habilitación de profesionales | 2 | profesional no verificado / clínica suspendida no puede solicitar |
-| HU-16..HU-18 solicitudes, aprobación, revocación, expiración 24 h | 2 | acceso sin autorización = 404/403; aprobado = 200; revocado = 404/403; expirado = 404/403 |
-| RNF-09 bitácora | 2 | cada operación genera registro; bitácora no editable |
-| HU-19..HU-23 historial compartido | 3 | clínica B lee atención de clínica A con autorización; no puede editarla |
-| RNF-11 correcciones versionadas | 3 | corrección crea versión nueva; original intacto |
-| HU-07..HU-12 búsqueda y catálogo | 4 | orden por distancia con PostGIS; "abierto según horario"; origen/fecha visibles |
-| HU-06 recordatorios | 4 | WorkManager programa notificación |
+| HU-14 → **Pase clínico de emergencia** (QR / enlace firmado temporal) | Recomendado como *Must* en la retroalimentación escrita (28-10-2026); no implementado | Decidir en el Informe 2 (ver DEC-024) |
+| HU-05 adjuntos (foto del carnet de vacunas) | La foto de perfil se guarda solo en el teléfono | Almacenamiento de objetos si hay capacidad |
+| HU-06 recordatorios | ⏳ | WorkManager con `next_due_on` |
 | HU-13 eliminación de cuenta | por decidir (DEC-009) | según opción aprobada |
+| Cápsulas de salud preventiva por especie/etapa | Recomendación del profesor; no implementado | Evaluar como *Should* (Django Admin + lista en la app) |
 | RNF-04, RNF-08, NS-01 | 5 (piloto) | medición en entorno desplegado |

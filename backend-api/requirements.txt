@@ -12,3 +12,6 @@ psycopg[binary]>=3.2,<3.3
 django-environ>=0.12,<0.13
 # Hash de contraseñas Argon2id (recomendación OWASP Password Storage) — RNF-01
 argon2-cffi>=23.1
+# Producción (piloto): servidor WSGI y archivos estáticos del portal web
+gunicorn>=23,<24
+whitenoise>=6.8,<7

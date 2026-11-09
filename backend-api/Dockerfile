@@ -21,4 +21,5 @@ RUN useradd --create-home --uid 10001 pettech && chown -R pettech /app
 USER pettech
 
 EXPOSE 8000
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Producción: gunicorn (docker-compose de desarrollo sobrescribe el comando con runserver).
+CMD ["sh", "scripts/start_production.sh"]

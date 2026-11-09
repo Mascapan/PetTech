@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import BaseUserCreationForm, UserChangeForm
 
-from .models import User
+from .models import AccountDeletionRequest, User
 
 
 class PetTechUserCreationForm(BaseUserCreationForm):
@@ -52,3 +52,10 @@ class UserAdmin(BaseUserAdmin):
             },
         ),
     )
+
+
+@admin.register(AccountDeletionRequest)
+class AccountDeletionRequestAdmin(admin.ModelAdmin):
+    list_display = ("email", "status", "created_at", "resolved_at")
+    list_filter = ("status",)
+    readonly_fields = ("user", "email", "reason", "created_at")

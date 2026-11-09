@@ -33,3 +33,22 @@ class PetTechAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status_code, response.content)
         self.assertIn("error", response.json())
         self.assertEqual(response.json()["error"]["code"], code)
+
+
+def make_clinic(name="Clínica Prueba", lat=-36.6066, lng=-72.1034, *, network=True, **extra):
+    """Establecimiento ficticio para pruebas (por defecto, en la red PetTech)."""
+    from django.contrib.gis.geos import Point
+    from django.utils import timezone
+
+    from apps.clinics.models import Clinic
+
+    return Clinic.objects.create(
+        name=name, address="Dirección ficticia", location=Point(lng, lat, srid=4326),
+        verified_at=extra.pop("verified_at", timezone.now()), accepts_pettech_records=network, **extra
+    )
+
+
+def link_professional(user, clinic, verified=True):
+    from apps.clinics.models import ProfessionalMembership
+
+    return ProfessionalMembership.objects.create(professional=user, clinic=clinic, is_verified=verified)

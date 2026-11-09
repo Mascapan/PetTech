@@ -1,0 +1,8 @@
+{% load static %}<!doctype html><html lang="es-CL"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{% endblock %} · PetTech</title><link rel="icon" href="{% static 'portal/logo.svg' %}">
+<link rel="stylesheet" href="{% static 'portal/portal.css' %}"></head>
+<body><main class="main" style="margin:0 auto;max-width:860px">
+<div class="brand" style="color:var(--teal-800)"><img src="{% static 'portal/logo.svg' %}" alt="" style="width:36px">PetTech</div>
+<div class="card">{% block content %}{% endblock %}</div>
+<p class="muted">Prototipo académico — Proyecto de Título, Ingeniería en Informática, INACAP Chillán (2026). Contacto: {{ contact_email }}</p>
+</main></body></html>

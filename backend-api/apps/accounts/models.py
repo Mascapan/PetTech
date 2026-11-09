@@ -54,6 +54,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Role(models.TextChoices):
         TUTOR = "TUTOR", "Tutor (propietario de mascotas)"
         PROFESSIONAL = "PROFESSIONAL", "Profesional veterinario"
+        CLINIC = "CLINIC", "Veterinaria (establecimiento)"
         ADMIN = "ADMIN", "Administrador de PetTech"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -90,7 +91,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         constraints = [
             models.UniqueConstraint(Lower("email"), name="accounts_user_email_ci_unique"),
             models.CheckConstraint(
-                condition=models.Q(role__in=["TUTOR", "PROFESSIONAL", "ADMIN"]),
+                condition=models.Q(role__in=["TUTOR", "PROFESSIONAL", "CLINIC", "ADMIN"]),
                 name="accounts_user_role_valid",
             ),
         ]
@@ -109,3 +110,52 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def is_professional(self) -> bool:
         return self.role == self.Role.PROFESSIONAL
+
+    @property
+    def is_clinic(self) -> bool:
+        return self.role == self.Role.CLINIC
+
+
+class PasswordResetCode(models.Model):
+    """
+    Código de recuperación de un solo uso (HU-01). Se guarda solo su hash; expira en minutos
+    y admite un número limitado de intentos para resistir la fuerza bruta.
+    """
+
+    MAX_ATTEMPTS = 5
+
+    user = models.ForeignKey(User, related_name="reset_codes", on_delete=models.CASCADE)
+    code_hash = models.CharField(max_length=128)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    attempts = models.PositiveSmallIntegerField(default=0)
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "código de recuperación"
+        verbose_name_plural = "códigos de recuperación"
+        ordering = ["-created_at"]
+
+
+class AccountDeletionRequest(models.Model):
+    """
+    Solicitud de eliminación iniciada por el titular desde la app (Ley 21.719; requisito de Google Play).
+    La ejecución la realiza el equipo según el criterio de DEC-009; aquí queda la constancia y su estado.
+    """
+
+    class Status(models.TextChoices):
+        PENDING = "PENDING", "Pendiente"
+        DONE = "DONE", "Ejecutada"
+        REJECTED = "REJECTED", "Rechazada"
+
+    user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, related_name="deletion_requests")
+    email = models.EmailField("correo al momento de la solicitud")
+    reason = models.CharField("motivo (opcional)", max_length=300, blank=True)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "solicitud de eliminación de cuenta"
+        verbose_name_plural = "solicitudes de eliminación de cuenta"
+        ordering = ["-created_at"]

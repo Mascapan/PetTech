@@ -1,0 +1,35 @@
+{% extends "portal/base.html" %}{% load static %}{% block title %}Mi veterinaria{% endblock %}
+{% block content %}
+<div class="top"><div><h1>{{ clinic.name }}</h1><p class="sub">{{ clinic.address }}, {{ clinic.commune }}</p></div>
+<a class="btn" href="{% url 'portal:clinic-pro-new' %}">＋ Autorizar profesional</a></div>
+{% if m.info_is_stale or clinic.info_origin != "CONFIRMED" %}
+<div class="msg info">Tu horario y servicios {% if clinic.info_origin != "CONFIRMED" %}aún no están confirmados por ustedes{% else %}no se actualizan hace tiempo{% endif %}.
+Los tutores ven esa advertencia. <a href="{% url 'portal:clinic-profile' %}">Actualizar ahora</a>.</div>{% endif %}
+<div class="kpis">
+<div class="kpi"><div class="v">{{ m.professionals }}</div><div class="l">Profesionales autorizados</div></div>
+<div class="kpi"><div class="v">{{ m.pending }}</div><div class="l">Solicitudes esperando al tutor</div></div>
+<div class="kpi"><div class="v">{{ m.active_grants }}</div><div class="l">Fichas con acceso vigente</div></div>
+<div class="kpi"><div class="v">{{ m.records }}</div><div class="l">Registros clínicos realizados</div></div>
+<div class="kpi"><div class="v">{{ m.patients }}</div><div class="l">Mascotas atendidas</div></div>
+</div>
+<div class="grid g2">
+<div class="card"><h2>Equipo profesional</h2>
+<table><thead><tr><th>Profesional</th><th>Estado</th><th></th></tr></thead><tbody>
+{% for mb in memberships %}<tr><td><strong>{{ mb.professional.full_name }}</strong><div class="muted">{{ mb.professional.email }}{% if mb.license_number %} · Reg. {{ mb.license_number }}{% endif %}</div></td>
+<td>{% if mb.is_verified %}<span class="tag t-green">Autorizado</span>{% else %}<span class="tag t-grey">Suspendido</span>{% endif %}</td>
+<td><form method="post" action="{% url 'portal:clinic-pro-toggle' mb.pk %}">{% csrf_token %}
+<input type="hidden" name="authorize" value="{% if mb.is_verified %}0{% else %}1{% endif %}">
+<button class="btn small {% if mb.is_verified %}danger{% else %}ghost{% endif %}">{% if mb.is_verified %}Suspender{% else %}Autorizar{% endif %}</button></form></td></tr>
+{% empty %}<tr><td colspan="3" class="muted">Aún no autorizas profesionales. Solo ellos pueden solicitar acceso a fichas clínicas en nombre de la veterinaria.</td></tr>{% endfor %}
+</tbody></table></div>
+<div class="card"><h2>Solicitudes de acceso (últimos 14 días)</h2><div class="chart-box"><canvas id="c1"></canvas></div></div>
+</div>
+<div class="card"><h2>Actividad reciente del equipo</h2><table><thead><tr><th>Fecha</th><th>Profesional</th><th>Código PetTech</th><th>Estado</th></tr></thead><tbody>
+{% for r in recent %}<tr><td>{{ r.created_at|date:"d-m-Y H:i" }}</td><td>{{ r.professional.full_name }}</td><td class="code">{{ r.pet.public_code }}</td>
+<td>{% with s=r.effective_status %}<span class="tag {% if s == 'APPROVED' %}t-green{% elif s == 'PENDING' %}t-amber{% elif s == 'EXPIRED' %}t-grey{% else %}t-red{% endif %}">{% if s == 'APPROVED' %}Autorizada{% elif s == 'PENDING' %}Pendiente{% elif s == 'EXPIRED' %}Expirada{% elif s == 'REJECTED' %}Rechazada{% else %}Revocada{% endif %}</span>{% endwith %}</td></tr>
+{% empty %}<tr><td colspan="4" class="muted">Sin actividad.</td></tr>{% endfor %}</tbody></table>
+<p class="muted">La veterinaria no ve la ficha clínica: solo sus profesionales autorizados, y únicamente con permiso vigente del tutor.</p></div>
+{{ m.requests_daily|json_script:"daily" }}
+{% endblock %}
+{% block scripts %}<script src="{% static 'portal/vendor/chart.umd.min.js' %}"></script><script src="{% static 'portal/charts.js' %}"></script>
+<script>ptLine('c1', JSON.parse(document.getElementById('daily').textContent), 'Solicitudes');</script>{% endblock %}

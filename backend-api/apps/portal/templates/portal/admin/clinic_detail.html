@@ -1,0 +1,28 @@
+{% extends "portal/base.html" %}{% block title %}{{ clinic.name }}{% endblock %}
+{% block content %}
+<div class="top"><div><h1>{{ clinic.name }}</h1><p class="sub">{{ clinic.address }}, {{ clinic.commune }} · {{ clinic.phone|default:"sin teléfono" }}</p></div>
+<div class="inline">
+<form method="post">{% csrf_token %}<input type="hidden" name="action" value="toggle_network">
+<button class="btn ghost">{% if clinic.accepts_pettech_records %}Quitar de la red PetTech{% else %}Incluir en la red PetTech{% endif %}</button></form>
+<form method="post">{% csrf_token %}<input type="hidden" name="action" value="toggle_active">
+<button class="btn {% if clinic.is_active %}danger{% endif %}">{% if clinic.is_active %}Suspender{% else %}Habilitar{% endif %}</button></form></div></div>
+<div class="kpis">
+<div class="kpi"><div class="v">{{ m.professionals }}</div><div class="l">Profesionales autorizados</div></div>
+<div class="kpi"><div class="v">{{ m.requests.total }}</div><div class="l">Solicitudes de acceso</div></div>
+<div class="kpi"><div class="v">{{ m.records }}</div><div class="l">Registros clínicos</div></div>
+<div class="kpi"><div class="v">{{ m.patients }}</div><div class="l">Mascotas atendidas</div></div>
+</div>
+<div class="grid g2">
+<div class="card"><h2>Cuenta y estado</h2><dl class="kv">
+<dt>Cuenta</dt><dd>{% if clinic.account %}{{ clinic.account.full_name }} · {{ clinic.account.email }}{% else %}Sin cuenta (creada por datos de demostración){% endif %}</dd>
+<dt>Estado</dt><dd>{% if clinic.is_active %}<span class="tag t-green">Habilitada</span>{% else %}<span class="tag t-red">Suspendida</span>{% endif %}{% if clinic.accepts_pettech_records %}<span class="tag t-blue">Red PetTech</span>{% endif %}</dd>
+<dt>Información</dt><dd>{{ clinic.get_info_origin_display }} · {{ clinic.verified_at|date:"d-m-Y H:i" }}{% if m.info_is_stale %} <span class="tag t-amber">Antigua</span>{% endif %}</dd>
+<dt>Urgencias</dt><dd>{% if clinic.emergency_24h %}24 horas{% elif clinic.attends_emergencies %}Sí, en su horario{% else %}No declara{% endif %}</dd>
+<dt>Horario</dt><dd>{% for h in hours %}{{ h.get_weekday_display }} {{ h.opens_at|time:"H:i" }}–{{ h.closes_at|time:"H:i" }}<br>{% empty %}Sin horario declarado{% endfor %}</dd>
+</dl></div>
+<div class="card"><h2>Profesionales</h2><table><thead><tr><th>Nombre</th><th>Correo</th><th>Estado</th></tr></thead><tbody>
+{% for mb in memberships %}<tr><td>{{ mb.professional.full_name }}</td><td>{{ mb.professional.email }}</td>
+<td>{% if mb.is_verified %}<span class="tag t-green">Autorizado</span>{% else %}<span class="tag t-grey">Suspendido</span>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="3" class="muted">La veterinaria aún no autoriza profesionales.</td></tr>{% endfor %}</tbody></table>
+<p class="muted">La autorización de cada profesional la gestiona la propia veterinaria.</p></div></div>
+{% endblock %}

@@ -21,6 +21,9 @@ interface ApiService {
     @POST("auth/logout/")
     suspend fun logout(): Response<Unit>
 
+    @POST("auth/account-deletion/")
+    suspend fun requestAccountDeletion(): MessageDto
+
     @GET("auth/me/")
     suspend fun me(): UserDto
 
@@ -41,4 +44,86 @@ interface ApiService {
 
     @DELETE("pets/{id}/")
     suspend fun deletePet(@Path("id") id: String): Response<Unit>
+
+    // ---------- Recuperación de contraseña (HU-01) ----------
+
+    @POST("auth/password-reset/")
+    suspend fun requestPasswordReset(@Body body: PasswordResetRequest): MessageDto
+
+    @POST("auth/password-reset/confirm/")
+    suspend fun confirmPasswordReset(@Body body: PasswordResetConfirmRequest): MessageDto
+
+    // ---------- Ficha clínica: tutor (titular) ----------
+
+    @GET("pets/{id}/clinical-record/")
+    suspend fun ownerRecord(@Path("id") petId: String, @Query("type") type: String? = null): ClinicalRecordDto
+
+    @POST("pets/{id}/clinical-record/entries/")
+    suspend fun ownerCreateEntry(@Path("id") petId: String, @Body body: EntryWriteRequest): ClinicalEntryDto
+
+    @POST("pets/{id}/clinical-record/entries/{entryId}/correct/")
+    suspend fun ownerCorrectEntry(
+        @Path("id") petId: String,
+        @Path("entryId") entryId: String,
+        @Body body: EntryWriteRequest,
+    ): ClinicalEntryDto
+
+    // ---------- Ficha clínica: profesional autorizado (por código PetTech) ----------
+
+    @GET("professional/me/")
+    suspend fun professionalProfile(): ProfessionalProfileDto
+
+    @GET("professional/pets/{code}/clinical-record/")
+    suspend fun professionalRecord(@Path("code") code: String, @Query("type") type: String? = null): ClinicalRecordDto
+
+    @POST("professional/pets/{code}/clinical-record/entries/")
+    suspend fun professionalCreateEntry(@Path("code") code: String, @Body body: EntryWriteRequest): ClinicalEntryDto
+
+    @POST("professional/pets/{code}/clinical-record/entries/{entryId}/correct/")
+    suspend fun professionalCorrectEntry(
+        @Path("code") code: String,
+        @Path("entryId") entryId: String,
+        @Body body: EntryWriteRequest,
+    ): ClinicalEntryDto
+
+    // ---------- Solicitudes de acceso y bitácora ----------
+
+    @GET("access/requests/")
+    suspend fun accessRequests(
+        @Query("status") status: String? = null,
+        @Query("pet") petId: String? = null,
+    ): List<AccessRequestDto>
+
+    @POST("access/requests/")
+    suspend fun requestAccess(@Body body: AccessRequestCreate): AccessRequestDto
+
+    @POST("access/requests/{id}/approve/")
+    suspend fun approveAccess(@Path("id") id: String): AccessRequestDto
+
+    @POST("access/requests/{id}/reject/")
+    suspend fun rejectAccess(@Path("id") id: String): AccessRequestDto
+
+    @POST("access/requests/{id}/revoke/")
+    suspend fun revokeAccess(@Path("id") id: String): AccessRequestDto
+
+    @GET("access/pets/{id}/log/")
+    suspend fun petAuditLog(@Path("id") petId: String): List<AuditEventDto>
+
+    // ---------- Establecimientos veterinarios ----------
+
+    @GET("clinics/")
+    suspend fun searchClinics(
+        @Query("lat") lat: Double?,
+        @Query("lng") lng: Double?,
+        @Query("radius_km") radiusKm: Int,
+        @Query("emergency") emergency: Boolean?,
+        @Query("open_now") openNow: Boolean?,
+        @Query("service") service: String?,
+    ): ClinicSearchDto
+
+    @GET("clinics/{id}/")
+    suspend fun clinic(@Path("id") id: String): ClinicDto
+
+    @GET("clinics/services/")
+    suspend fun clinicServices(): List<ServiceDto>
 }

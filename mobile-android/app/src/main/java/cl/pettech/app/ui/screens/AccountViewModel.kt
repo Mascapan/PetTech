@@ -1,12 +1,16 @@
 package cl.pettech.app.ui.screens
 
+import android.content.Context
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import cl.pettech.app.data.repository.AuthRepository
 import cl.pettech.app.data.session.SessionManager
 import cl.pettech.app.data.session.SessionState
+import cl.pettech.app.domain.model.AppResult
 import cl.pettech.app.domain.model.User
 import cl.pettech.app.ui.appContainer
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +25,7 @@ import kotlinx.coroutines.launch
 class AccountViewModel(
     private val auth: AuthRepository,
     sessionManager: SessionManager,
+    private val appContext: Context,
 ) : ViewModel() {
 
     val user: StateFlow<User?> = sessionManager.state
@@ -43,11 +48,31 @@ class AccountViewModel(
         }
     }
 
+    private val _deletionMessage = MutableStateFlow<String?>(null)
+    val deletionMessage: StateFlow<String?> = _deletionMessage.asStateFlow()
+
+    fun requestDeletion() {
+        viewModelScope.launch {
+            when (val r = auth.requestAccountDeletion()) {
+                is AppResult.Success -> {
+                    // Toast con el contexto de la aplicación: sigue visible al volver a la pantalla de ingreso.
+                    Toast.makeText(appContext, r.data, Toast.LENGTH_LONG).show()
+                    auth.endLocalSession()
+                }
+                is AppResult.Failure -> {
+                    _deletionMessage.value = r.error.message
+                    Toast.makeText(appContext, r.error.message, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
     companion object {
         val Factory = viewModelFactory {
             initializer {
                 val container = appContainer()
-                AccountViewModel(container.authRepository, container.sessionManager)
+                val app = checkNotNull(this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY])
+                AccountViewModel(container.authRepository, container.sessionManager, app.applicationContext)
             }
         }
     }

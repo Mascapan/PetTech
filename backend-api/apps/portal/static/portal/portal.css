@@ -1,0 +1,71 @@
+/* PetTech — portal web. Misma identidad visual que la app Android (verde azulado + coral). */
+:root{
+  --teal-900:#004d44;--teal-800:#00695c;--teal-700:#00796b;--teal-100:#b2dfdb;--teal-50:#e0f2f1;
+  --coral:#e76f51;--coral-100:#ffdbd1;--ink:#1b2b2a;--ink-2:#4a5e5c;--mist:#f6faf9;--line:#dde7e5;
+  --red:#9b2c20;--red-bg:#fde2df;--green:#1b6b3a;--green-bg:#ddf3e4;--amber:#7a5300;--amber-bg:#fff1cc;
+  --blue:#1d4e89;--blue-bg:#ddebfa;--radius:14px;--shadow:0 1px 2px rgba(0,0,0,.06),0 4px 16px rgba(0,77,68,.06);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--mist);font-size:15px;line-height:1.45}
+a{color:var(--teal-700)}
+.layout{display:flex;min-height:100vh}
+.side{width:248px;background:var(--teal-900);color:#fff;display:flex;flex-direction:column;padding:20px 14px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px;padding:4px 8px 18px}
+.brand img{width:36px;height:36px}
+.role{font-size:12px;opacity:.8;padding:0 8px 14px;border-bottom:1px solid rgba(255,255,255,.15);margin-bottom:10px}
+.nav a{display:flex;gap:10px;align-items:center;color:#e6f4f2;text-decoration:none;padding:10px 12px;border-radius:10px;margin:2px 0}
+.nav a:hover{background:rgba(255,255,255,.08)}
+.nav a.on{background:var(--teal-700);color:#fff;font-weight:600}
+.side .bottom{margin-top:auto;font-size:13px}
+.side .bottom .who{padding:8px 12px;opacity:.85}
+.main{flex:1;padding:28px 34px;max-width:1240px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+h1{font-size:26px;margin:0}
+.sub{color:var(--ink-2);margin:4px 0 0}
+h2{font-size:17px;margin:0 0 12px;color:var(--teal-800)}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:18px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:18px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi .v{font-size:28px;font-weight:700;color:var(--teal-800)}
+.kpi .l{color:var(--ink-2);font-size:13px}
+.btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:10px;padding:10px 16px;font-weight:600;font-size:14px;cursor:pointer;text-decoration:none;background:var(--teal-700);color:#fff}
+.btn:hover{background:var(--teal-800)}
+.btn.ghost{background:#fff;color:var(--teal-800);border:1.5px solid var(--teal-700)}
+.btn.danger{background:#fff;color:var(--red);border:1.5px solid #e4b4ae}
+.btn.small{padding:6px 10px;font-size:13px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2)}
+.tag{display:inline-block;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;margin:0 4px 4px 0}
+.t-green{background:var(--green-bg);color:var(--green)}.t-grey{background:#e8eceb;color:var(--ink-2)}
+.t-red{background:var(--red-bg);color:var(--red)}.t-amber{background:var(--amber-bg);color:var(--amber)}
+.t-blue{background:var(--blue-bg);color:var(--blue)}
+.msg{border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.msg.success{background:var(--green-bg);color:var(--green)}.msg.error{background:var(--red-bg);color:var(--red)}
+.msg.info{background:var(--teal-50);color:var(--teal-900)}
+form .field{margin-bottom:14px}
+label{display:block;font-weight:600;font-size:14px;margin-bottom:4px}
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=date],input[type=time],select,textarea{
+  width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font:inherit;background:#fff}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal-700);box-shadow:0 0 0 3px var(--teal-50)}
+.help{font-size:12px;color:var(--ink-2);margin-top:3px}
+.err{font-size:13px;color:var(--red);margin-top:3px}
+.checks ul{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.checks label{font-weight:400;display:flex;gap:8px;align-items:center}
+.inline{display:flex;gap:8px;align-items:center}.inline label{margin:0;font-weight:500}
+.code{font-family:ui-monospace,Consolas,monospace;font-weight:700;letter-spacing:1px;color:var(--teal-800)}
+.muted{color:var(--ink-2);font-size:13px}
+.entry{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.entry h4{margin:4px 0}
+.kv{display:grid;grid-template-columns:160px 1fr;gap:4px 12px;font-size:14px}
+.kv dt{color:var(--ink-2)}.kv dd{margin:0}
+.chips a{display:inline-block;padding:6px 12px;border:1.5px solid var(--line);border-radius:999px;margin:0 6px 6px 0;text-decoration:none;color:var(--ink);font-size:13px}
+.chips a.on{background:var(--coral-100);border-color:var(--coral)}
+.login-wrap{min-height:100vh;display:grid;place-items:center;background:linear-gradient(160deg,var(--teal-900),var(--teal-700) 60%,var(--teal-100))}
+.login{width:min(420px,92vw);background:#fff;border-radius:18px;padding:30px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.login .brand{color:var(--teal-800);justify-content:center;padding:0 0 4px}
+.hours td{padding:6px 8px}.hours input[type=time]{width:130px}
+.chart-box{position:relative;height:260px}
+@media (max-width:900px){.layout{flex-direction:column}.side{width:100%;height:auto;position:static}.g2,.g3{grid-template-columns:1fr}.main{padding:18px}}

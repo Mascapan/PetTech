@@ -1,0 +1,41 @@
+{% load static %}<!doctype html>
+<html lang="es-CL">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Portal{% endblock %} · PetTech</title>
+<link rel="icon" href="{% static 'portal/logo.svg' %}">
+<link rel="stylesheet" href="{% static 'portal/portal.css' %}">
+{% block head %}{% endblock %}
+</head>
+<body>
+<div class="layout">
+  <aside class="side">
+    <div class="brand"><img src="{% static 'portal/logo.svg' %}" alt="">PetTech</div>
+    <div class="role">{{ user.get_role_display }}</div>
+    <nav class="nav">
+      {% if user.role == "ADMIN" %}
+        <a href="{% url 'portal:admin-dashboard' %}" class="{% if section == 'dash' %}on{% endif %}">📊 Cuadros de análisis</a>
+        <a href="{% url 'portal:admin-clinics' %}" class="{% if section == 'clinics' %}on{% endif %}">🏥 Veterinarias</a>
+        <a href="{% url 'admin:index' %}">⚙️ Administración avanzada</a>
+      {% elif user.role == "CLINIC" %}
+        <a href="{% url 'portal:clinic-dashboard' %}" class="{% if section == 'dash' %}on{% endif %}">🏥 Mi veterinaria</a>
+        <a href="{% url 'portal:clinic-pro-new' %}" class="{% if section == 'team' %}on{% endif %}">👩‍⚕️ Autorizar profesional</a>
+        <a href="{% url 'portal:clinic-profile' %}" class="{% if section == 'profile' %}on{% endif %}">🕒 Horario y servicios</a>
+      {% elif user.role == "PROFESSIONAL" %}
+        <a href="{% url 'portal:vet-home' %}" class="{% if section == 'vet' %}on{% endif %}">🔎 Código PetTech</a>
+      {% endif %}
+    </nav>
+    <div class="bottom">
+      <div class="who">{{ user.full_name }}<br><span class="muted" style="color:#cde">{{ user.email }}</span></div>
+      <form method="post" action="{% url 'portal:logout' %}">{% csrf_token %}
+        <button class="btn ghost small" style="margin:6px 12px">Cerrar sesión</button></form>
+    </div>
+  </aside>
+  <main class="main">
+    {% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% block scripts %}{% endblock %}
+</body>
+</html>

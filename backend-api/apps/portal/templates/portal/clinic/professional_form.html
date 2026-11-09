@@ -1,0 +1,9 @@
+{% extends "portal/base.html" %}{% block title %}Autorizar profesional{% endblock %}
+{% block content %}
+<div class="top"><div><h1>Autorizar profesional</h1><p class="sub">Crea la cuenta de un veterinario/a de tu equipo. Podrá solicitar acceso a fichas clínicas en nombre de tu veterinaria.</p></div></div>
+<div class="card" style="max-width:620px"><form method="post" novalidate>{% csrf_token %}
+{% for e in form.non_field_errors %}<div class="msg error">{{ e }}</div>{% endfor %}
+{% for f in form %}{% include "portal/_field.html" with field=f %}{% endfor %}
+<button class="btn">Crear y autorizar</button> <a class="btn ghost" href="{% url 'portal:clinic-dashboard' %}">Cancelar</a>
+</form></div>
+{% endblock %}

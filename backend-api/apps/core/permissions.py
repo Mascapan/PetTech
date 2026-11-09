@@ -17,3 +17,25 @@ class IsTutor(BasePermission):
     def has_permission(self, request, view) -> bool:
         user = request.user
         return bool(user and user.is_authenticated and user.is_active and user.role == User.Role.TUTOR)
+
+
+class IsProfessional(BasePermission):
+    """Cuentas activas con rol PROFESSIONAL. La verificación del vínculo con un establecimiento
+    y la autorización del tutor se comprueban además en apps.access_control.services."""
+
+    message = "Esta función está disponible solo para profesionales veterinarios."
+
+    def has_permission(self, request, view) -> bool:
+        user = request.user
+        return bool(user and user.is_authenticated and user.is_active and user.role == User.Role.PROFESSIONAL)
+
+
+class IsTutorOrProfessional(BasePermission):
+    message = "Esta función está disponible solo para tutores y profesionales."
+
+    def has_permission(self, request, view) -> bool:
+        user = request.user
+        return bool(
+            user and user.is_authenticated and user.is_active
+            and user.role in (User.Role.TUTOR, User.Role.PROFESSIONAL)
+        )

@@ -2,10 +2,15 @@ package cl.pettech.app.di
 
 import android.content.Context
 import cl.pettech.app.BuildConfig
+import cl.pettech.app.data.local.LocationProvider
+import cl.pettech.app.data.local.PetPhotoStore
 import cl.pettech.app.data.remote.ApiErrorParser
 import cl.pettech.app.data.remote.ApiService
 import cl.pettech.app.data.remote.AuthInterceptor
+import cl.pettech.app.data.repository.AccessRepository
 import cl.pettech.app.data.repository.AuthRepository
+import cl.pettech.app.data.repository.ClinicRepository
+import cl.pettech.app.data.repository.ClinicalRecordRepository
 import cl.pettech.app.data.repository.PetRepository
 import cl.pettech.app.data.session.SessionManager
 import cl.pettech.app.data.session.SessionStore
@@ -69,4 +74,10 @@ class AppContainer(context: Context) {
 
     val authRepository = AuthRepository(api, sessionManager, errorParser)
     val petRepository = PetRepository(api, errorParser)
+    val clinicalRecordRepository = ClinicalRecordRepository(api, errorParser)
+    val accessRepository = AccessRepository(api, errorParser)
+    val clinicRepository = ClinicRepository(api, errorParser)
+
+    val petPhotoStore = PetPhotoStore(context.applicationContext)
+    val locationProvider = LocationProvider(context.applicationContext)
 }

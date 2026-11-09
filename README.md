@@ -6,7 +6,9 @@ PetTech es una plataforma para **tutores de mascotas** (B2C) y **establecimiento
 **carnet e historial clínico digital compartido entre veterinarias autorizadas por el tutor**. Esta carpeta
 (`Prototipo`) es la raíz del repositorio del software.
 
-> **Estado actual: Incremento 1 (Fase 1).** Cuentas, autenticación, roles y mascotas del tutor con código PetTech.
+> **Estado actual: Incremento 2.** Cuentas (con recuperación de contraseña), mascotas con código PetTech, **ficha
+> clínica estandarizada**, **acceso de veterinarias por código PetTech con autorización del tutor** y bitácora,
+> y **búsqueda de veterinarias** (cercanía, filtros, horario declarado, mapa y ruta). La app sigue el boceto del equipo.
 > Detalle verificado en [`docs/ESTADO_DESARROLLO.md`](docs/ESTADO_DESARROLLO.md).
 
 ## Arquitectura
@@ -29,6 +31,9 @@ Prototipo/
 │   ├── apps/core/        errores uniformes, permisos, paginación, salud, datos demo
 │   ├── apps/accounts/    usuarios, roles, autenticación por token
 │   ├── apps/pets/        mascotas, código PetTech, carnet
+│   ├── apps/clinics/     establecimientos, horarios, profesionales verificados, búsqueda PostGIS
+│   ├── apps/access_control/ solicitudes por código PetTech, autorizaciones 24 h, bitácora
+│   ├── apps/clinical_records/ ficha clínica estandarizada y correcciones versionadas
 │   └── scripts/          prueba de humo HTTP
 ├── mobile-android/       App Android (Kotlin, MVVM, Compose)
 ├── docs/                 arquitectura, modelo de datos, requisitos, trazabilidad, decisiones, API, evidencias
@@ -108,7 +113,7 @@ API disponible en `http://localhost:8000/api/v1/`. Para ejecutar pruebas: `docke
 | Django Admin | `http://localhost:8000/admin/` |
 
 ```powershell
-python manage.py test                     # 51 pruebas automatizadas (requiere PostgreSQL/PostGIS)
+python manage.py test                     # 111 pruebas automatizadas (requiere PostgreSQL/PostGIS)
 python scripts\smoke_test_api.py          # recorrido HTTP real contra el servidor en ejecución
 ```
 
@@ -135,7 +140,70 @@ Creadas por `python manage.py seed_demo` (contraseña = `DEMO_PASSWORD` de `.env
 |---|---|---|
 | `tutora.demo@pettech.test` | Tutor | Luna [DEMO], Michi [DEMO] |
 | `tutor2.demo@pettech.test` | Tutor | Rocky [DEMO] (para probar aislamiento) |
-| `vet1.demo@pettech.test` | Profesional | — (clínicas y verificación en Fase 2) |
+| `vet1.demo@pettech.test` | Profesional | Clínica Veterinaria Andes [DEMO] (verificado) |
+| `vet2.demo@pettech.test` | Profesional | Hospital Veterinario Ñuble 24 [DEMO] (verificado; registró la ficha simulada de Luna) |
+| `vet3.demo@pettech.test` | Profesional | Sin vínculo verificado (para demostrar que no puede solicitar acceso) |
+| `admin.demo@pettech.test` | Administrador | **Portal web**: cuadros de análisis y alta de veterinarias |
+| `andes.demo@pettech.test` | Veterinaria | **Portal web**: Clínica Andes — autoriza profesionales y publica su horario |
+| `nuble24.demo@pettech.test` | Veterinaria | **Portal web**: Hospital Ñuble 24 |
+
+### Portal web
+
+Con el backend en marcha, abrir **http://localhost:8000/** (redirige a `/portal/`). Perfiles:
+
+- **Administrador** → cuadros de análisis y "Nueva veterinaria" (crea el establecimiento y su cuenta).
+- **Veterinaria** → "Autorizar profesional" (crea la cuenta del veterinario/a) y "Horario y servicios" (lo que ven los
+  tutores en la app, marcado como confirmado por el establecimiento).
+- **Profesional** → "Código PetTech": solicita acceso; cuando el tutor autoriza en la app, abre la ficha clínica,
+  registra atenciones y corrige sus registros. La página se actualiza sola mientras hay solicitudes pendientes.
+
+La app y el portal usan la misma API y base de datos, por lo que funcionan al mismo tiempo: lo que se hace en uno se
+ve de inmediato en el otro. Páginas públicas: `/privacidad/` y `/eliminar-cuenta/`.
+
+### Base de datos
+
+PostgreSQL 16 + PostGIS corre en el contenedor `db` y guarda los datos en el volumen `pettech_pgdata` (persisten
+al apagar el equipo). Respaldo y restauración (PowerShell, carpeta PetTech):
+
+```powershell
+.\scripts\respaldar_bd.ps1                       # crea respaldos\pettech_AAAAMMDD_HHMM.dump
+.\scripts\restaurar_bd.ps1 respaldos\<archivo>.dump
+```
+
+Además se crean 6 establecimientos **ficticios** en Chillán y San Carlos con horarios, urgencias, servicios y distintos
+orígenes/antigüedades de la información.
+
+### Guion de demostración (tutor + veterinario)
+
+1. **Tutor** (`tutora.demo`): Mis mascotas → Luna → *Ficha clínica* (resumen, filtros, quién atendió).
+2. Copiar el **código PetTech** de Luna (ficha de la mascota).
+3. **Veterinario** (`vet1.demo`, en otro emulador o tras cerrar sesión): ingresar el código → *Solicitar acceso*.
+4. **Tutor**: campanita → *Autorizar 24 h*.
+5. **Veterinario**: *Abrir ficha clínica* → *Registrar atención* (p. ej., una vacuna con próxima dosis).
+6. **Tutor**: ve el nuevo registro con autor y establecimiento, y la bitácora en "Veterinarias con acceso"; puede *Revocar*.
+7. **Tutor**: *Buscar veterinaria* → "Centro de Chillán" → filtros *Abierto ahora* / *Urgencias* → *Cómo llegar*.
+
+### Demostración con un solo emulador
+
+Si solo tienes un emulador, el veterinario `vet1.demo` puede simularse desde el contenedor
+(Docker Desktop → contenedor `api` → pestaña **Exec**):
+
+```sh
+/usr/local/bin/python manage.py demo_veterinario solicitar PT-XXXX-XXXX   # pide acceso con el código
+# (en la app del tutor: campanita → Autorizar 24 h)
+/usr/local/bin/python manage.py demo_veterinario registrar PT-XXXX-XXXX   # lee la ficha y registra vacuna + control
+```
+
+Usa las mismas reglas que la API (sin autorización vigente es denegado) y queda en la bitácora. Solo funciona con `DEBUG=True`.
+
+> Tras actualizar el código del backend, reinicia el contenedor `api` (aplica las migraciones al arrancar)
+> y ejecuta `seed_demo` una vez.
+
+### Mapa (opcional)
+
+Para ver el mapa embebido agregar en `mobile-android/local.properties` una clave de **Maps SDK for Android**:
+`MAPS_API_KEY=AIza...` (no se versiona). Sin clave, la búsqueda funciona en modo lista y "Cómo llegar" abre la app de
+mapas del teléfono. En el emulador, fijar la ubicación en Chillán (*Extended controls → Location*: -36.6066, -72.1034).
 
 El dominio `.test` está reservado y no corresponde a personas reales.
 

@@ -5,7 +5,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from . import services
-from .serializers import AuthResponseSerializer, LoginSerializer, RegisterSerializer, UserSerializer
+from .serializers import (
+    AuthResponseSerializer,
+    LoginSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
+    RegisterSerializer,
+    UserSerializer,
+)
 
 
 def _auth_response(user, instance, token, http_status):
@@ -82,3 +89,59 @@ class MeView(APIView):
     @extend_schema(responses={200: UserSerializer}, tags=["auth"])
     def get(self, request):
         return Response(UserSerializer(request.user).data)
+
+
+GENERIC_RESET_MESSAGE = "Si el correo está registrado, recibirás un código para crear una nueva contraseña."
+
+
+class PasswordResetRequestView(APIView):
+    """Solicita un código de recuperación (HU-01). No revela si el correo existe."""
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_scope = "auth"
+
+    @extend_schema(request=PasswordResetRequestSerializer, responses={200: dict}, tags=["auth"])
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        services.start_password_reset(serializer.validated_data["email"])
+        return Response({"detail": GENERIC_RESET_MESSAGE})
+
+
+class PasswordResetConfirmView(APIView):
+    """Crea una nueva contraseña con el código recibido; cierra las sesiones anteriores."""
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_scope = "auth"
+
+    @extend_schema(request=PasswordResetConfirmSerializer, responses={200: dict}, tags=["auth"])
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        if not services.confirm_password_reset(data["email"], data["code"], data["new_password"]):
+            raise serializers.ValidationError({"code": ["El código no es válido o ya venció. Solicita uno nuevo."]})
+        return Response({"detail": "Tu contraseña fue actualizada. Ya puedes iniciar sesión."})
+
+
+class AccountDeletionRequestView(APIView):
+    """El titular solicita eliminar su cuenta desde la app. Se registra y se cierran sus sesiones."""
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=None, responses={201: dict}, tags=["auth"])
+    def post(self, request):
+        from .models import AccountDeletionRequest
+
+        reason = str(request.data.get("reason", ""))[:300] if hasattr(request, "data") else ""
+        existing = AccountDeletionRequest.objects.filter(user=request.user, status="PENDING").first()
+        if existing is None:
+            AccountDeletionRequest.objects.create(user=request.user, email=request.user.email, reason=reason)
+        services.revoke_all_tokens(request.user)
+        return Response(
+            {"detail": "Recibimos tu solicitud. Te escribiremos al correo de tu cuenta para confirmarla "
+                       "en un plazo máximo de 30 días."},
+            status=status.HTTP_201_CREATED,
+        )

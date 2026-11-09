@@ -71,4 +71,34 @@ class ValidatorsTest {
         assertTrue(SessionManager.isExpired("fecha-invalida", now))
         assertFalse(SessionManager.isExpired(null, now))
     }
+
+    @Test
+    fun fecha_de_evento_obligatoria_y_no_futura() {
+        assertTrue(Validators.parseEventDate("", today) is BirthDateResult.Invalid)
+        assertTrue(Validators.parseEventDate("02-11-2026", today) is BirthDateResult.Invalid)
+        assertEquals(BirthDateResult.Valid(LocalDate.of(2026, 10, 1)), Validators.parseEventDate("01-10-2026", today))
+    }
+
+    @Test
+    fun proxima_fecha_opcional_y_posterior_al_evento() {
+        val occurred = LocalDate.of(2026, 10, 1)
+        assertEquals(BirthDateResult.Empty, Validators.parseNextDate("", occurred))
+        assertTrue(Validators.parseNextDate("30-09-2026", occurred) is BirthDateResult.Invalid)
+        assertEquals(BirthDateResult.Valid(LocalDate.of(2027, 10, 1)), Validators.parseNextDate("01-10-2027", occurred))
+    }
+
+    @Test
+    fun peso_acepta_coma_decimal_y_rango() {
+        assertEquals(12.5, Validators.parseWeight("12,5").getOrNull())
+        assertEquals(null, Validators.parseWeight("").getOrNull())
+        assertTrue(Validators.parseWeight("0").isFailure)
+        assertTrue(Validators.parseWeight("abc").isFailure)
+    }
+
+    @Test
+    fun codigo_pettech_tolerante_al_dictado() {
+        assertEquals("PT-AD4D-8CNT", Validators.normalizePetCode("pt ad4d 8cnt"))
+        assertEquals("PT-1D0D-8CNT", Validators.normalizePetCode("PTID0D8CNT"))
+        assertEquals(null, Validators.normalizePetCode("PT-123"))
+    }
 }

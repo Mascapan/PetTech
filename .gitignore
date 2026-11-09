@@ -49,3 +49,11 @@ Thumbs.db
 
 # --- Evidencias generadas automáticamente (se versiona solo lo curado) ---
 docs/evidencias/tmp/
+
+# Respaldos de la base de datos (contienen datos personales)
+respaldos/
+*.dump
+
+# --- Kotlin (caché del compilador) y archivos temporales locales ---
+.kotlin/
+_to_delete/

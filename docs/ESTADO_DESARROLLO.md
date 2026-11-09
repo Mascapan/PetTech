@@ -1,90 +1,98 @@
 # Estado del desarrollo
 
-**Última actualización:** 1 de noviembre de 2026 · **Incremento:** 1 (Fase 1 — arquitectura y sistema ejecutable)
+**Última actualización:** 8 de noviembre de 2026 (tarde) · **Incremento:** 3 — portal web y preparación para Google Play.
+Incremento anterior: 2 (ficha clínica, acceso por código PetTech,
+búsqueda de veterinarias y app según el boceto del equipo)
 
 Leyenda: ✅ verificado (ejecutado) · 🟡 escrito, verificación parcial · ⏳ pendiente · ⛔ bloqueado.
 
 ## 1. Implementado
 
-### Backend (`backend-api/`) — ✅ verificado
-| Elemento | Detalle | Verificación |
+### Backend (`backend-api/`) — ✅ verificado (91/91 pruebas, PostgreSQL 16 + PostGIS 3.4)
+| Módulo | Contenido | Pruebas |
 |---|---|---|
-| Proyecto Django 5.2 LTS + DRF 3.16 + GeoDjango | monolito modular `core`, `accounts`, `pets`; settings `base/development/production` | `manage.py check` y `check --deploy` (solo aviso HSTS preload, intencional) |
-| PostgreSQL 16 + PostGIS 3.4 | motor `postgis`; migraciones iniciales aplicadas | `DatabaseTests` (incluye `ST_Distance`) |
-| Usuario personalizado | UUID, correo único sin mayúsculas, roles TUTOR/PROFESSIONAL/ADMIN, consentimiento versionado | pruebas `accounts` |
-| Autenticación por token | registro (solo tutores), login, logout, logout-all, me; knox con hash, TTL por rol, máx. 5 sesiones; *throttling* 10/min | 21 pruebas `accounts` |
-| Mascotas | CRUD propio, código `PT-XXXX-XXXX`, validaciones, aislamiento por tutor, 404 para ajenas, 403 para otros roles | 23 pruebas `pets` |
-| Errores uniformes y salud | `{"error":{...}}`; `/api/v1/health/` (BD + PostGIS) | 7 pruebas `core` |
-| Django Admin | usuarios (crear cuentas profesionales, suspender); mascotas solo lectura | revisión manual pendiente |
-| OpenAPI | `docs/api/openapi.yaml` validado; Swagger en `/api/v1/docs/` (dev) | `spectacular --validate` |
-| Datos simulados | `seed_demo`: 2 tutores, 1 profesional, 3 mascotas `[DEMO]` (bloqueado si `DEBUG=False`) | ejecutado |
-| Prueba de humo HTTP | `scripts/smoke_test_api.py` | 14/14 ✅ |
+| `accounts` | Registro de tutores, inicio de sesión, tokens knox, **recuperación de contraseña con código de 6 dígitos** | 25 |
+| `pets` | Mascotas del tutor, código PetTech `PT-XXXX-XXXX`; eliminación protegida si hay registros de veterinarias (409) | 23 |
+| `clinics` | Catálogo con ubicación PostGIS, horario declarado (incluye franjas nocturnas y 24 h), servicios, urgencias, origen y fecha de verificación, umbral de antigüedad; búsqueda por cercanía con filtros; abiertas primero | 11 |
+| `access_control` | Solicitud por código PetTech, aprobación/rechazo/revocación por el tutor, autorización de 24 h, bitácora inmutable (incluye intentos denegados) | 13 |
+| `clinical_records` | Ficha clínica estandarizada (8 tipos), origen tutor/profesional, autor y establecimiento, resumen clínico, correcciones versionadas, inmutabilidad | 12 |
+| `core` | Errores uniformes (+409), permisos `IsTutor`/`IsProfessional`, salud, `seed_demo` ampliado | 7 |
 
-### App Android (`mobile-android/`) — 🟡 escrita, NO compilada aún
-| Elemento | Detalle |
+OpenAPI regenerado y validado (`docs/api/openapi.yaml`, 31 operaciones). Recorrido HTTP manual verificado:
+búsqueda → solicitud del profesional → aprobación del tutor → lectura y registro → bitácora.
+
+### App Android (`mobile-android/`) — ✅ compilada y ejecutada en emulador (Android 16, API 37)
+Pantallas según el boceto (DEC-019):
+
+| Vista del boceto | Pantalla | Funciones |
+|---|---|---|
+| 1. Inicio de sesión | `LoginScreen`, `ForgotPasswordScreen`, `RegisterScreen` | Usuario/contraseña, olvidé mi contraseña (código por correo), registrarse, continuar; "Google" informa que llegará después |
+| 2. Mis mascotas | `TutorHomeScreen` | Fichas en cuadrícula con foto, agregar mascota, aviso de solicitudes pendientes, botón inferior "Buscar veterinaria" |
+| 3. Ficha de la mascota | `PetDetailScreen` | Foto (galería, guardada en el teléfono), nombre, fecha, raza, información general, código PetTech, accesos vigentes, botón "Ficha clínica" |
+| 4. Ficha clínica | `ClinicalRecordScreen`, `EntryFormScreen` | Resumen (peso, alergias, patologías, fármacos, próximas fechas), filtro por tipo, quién/dónde atendió, agregar y corregir |
+| 5. Buscar veterinaria | `ClinicSearchScreen`, `ClinicDetailScreen` | Mi ubicación / centro de Chillán / punto en el mapa; filtros abierto ahora, urgencias, servicio, radio; mapa (si hay clave); "Cómo llegar"; llamar |
+| Tutor: accesos | `AccessScreen` | Autorizar 24 h, rechazar, revocar, historial y bitácora por mascota |
+| Veterinario | `ProfessionalHomeScreen` + `ClinicalRecordScreen` | Ingresar código PetTech, solicitar acceso, ver estado, abrir y registrar en la ficha autorizada |
+
+Nuevas dependencias: `play-services-location 21.3.0`, `play-services-maps 19.0.0`, `maps-compose 6.2.1`.
+Pruebas JVM: `ValidatorsTest.kt` (12 pruebas; 4 nuevas) — sin ejecutar en este entorno.
+
+### Incremento 3 — Portal web y publicación (08-11-2026)
+| Elemento | Estado |
 |---|---|
-| Proyecto | Kotlin 2.1, AGP 8.7.3, Compose BOM 2024.12.01, `minSdk 28` (Android 9), `targetSdk 35` |
-| Arquitectura | MVVM (ViewModel + StateFlow), repositorios, DI manual, Navigation Compose |
-| Red | Retrofit + OkHttp + kotlinx.serialization; `AuthInterceptor` (token + manejo de 401); errores del backend mapeados a mensajes por campo |
-| Sesión | DataStore cifrado con AES-GCM (Android Keystore); restauración al abrir; expiración |
-| Seguridad de plataforma | `allowBackup=false`; reglas de extracción; HTTP solo en *debug*; HTTPS obligatorio en *release*; *logging* HTTP solo nivel BASIC en *debug* |
-| Pantallas | Bienvenida · Registro (con política de privacidad) · Inicio de sesión · Panel del tutor · Mis mascotas · Agregar/editar mascota · Carnet digital (código, copiar, eliminar con confirmación) · Panel profesional (informativo) |
-| Identidad visual | Logotipo original (huella + escudo), paleta verde azulado/coral, ícono adaptable, tema claro/oscuro |
-| Pruebas | `ValidatorsTest.kt` (8 pruebas JUnit) |
+| Portal web `/portal/` con 3 perfiles (administrador, veterinaria, profesional), sesión segura, CSRF, límite de intentos | ✅ 19 pruebas |
+| Cuadros de análisis del administrador (KPI + 6 gráficos, solo datos agregados) | ✅ revisado visualmente |
+| Rol `CLINIC`: crea/autoriza/suspende profesionales; publica horario, urgencias y servicios (dato confirmado) | ✅ |
+| Profesional en la web: código PetTech, solicitudes con autoactualización, ficha clínica, registro y corrección | ✅ |
+| Páginas públicas `/privacidad/` y `/eliminar-cuenta/`; solicitud de eliminación desde la app | ✅ backend · 🟡 app |
+| Producción: gunicorn + whitenoise + `render.yaml`; arranque verificado con settings de producción | ✅ local · ⏳ despliegue |
+| App: `targetSdk 36`, versión 0.3.0, firma *release* desde `local.properties`, menú "Mi cuenta" | 🟡 ver §5 |
+| Respaldo/restauración de BD (`scripts/*.ps1`) | 🟡 escrito, sin ejecutar en Windows |
+| Total backend | ✅ **111/111** pruebas |
+| Recorrido extremo a extremo (08-11-2026, 17:15): admin crea veterinaria nueva + cuenta → veterinaria autoriza profesional → profesional solicita con código PetTech en la web → tutor ve y aprueba con la API de la app → profesional registra vacuna en la web → tutor la ve en la app con autor y establecimiento; bitácora con lecturas y registro | ✅ (Playwright + API) |
+| Código Kotlin de la app (incremento 3) | ✅ compila (620 clases, 0 errores) con el verificador local; ⏳ compilación Gradle con compileSdk 36 |
 
-Verificación parcial realizada: compilación y ejecución de la capa de dominio y de `SessionManager` con kotlinc fuera de
-Android, y análisis sintáctico de todos los archivos (`docs/evidencias/fase1/pruebas_android_dominio.md`).
-
-## 2. En desarrollo / siguiente paso inmediato
-1. **Equipo:** abrir `mobile-android` en Android Studio, sincronizar, compilar y ejecutar en emulador contra el backend.
-   Reportar cualquier error de compilación tal como aparece (se corrige en la próxima intervención).
-2. **Equipo:** levantar el backend en Windows (Docker u OSGeo4W) y ejecutar `python manage.py test`.
-3. Fase 2 (al aprobar el plan DEC-018): `clinics`, `access_control`, bitácora.
+## 2. Siguiente paso inmediato (equipo)
+1. ✅ Hecho el 08-11-2026 (sincronizado, compilado y ejecutado). Falta probar el rol profesional iniciando sesión con `vet1.demo@pettech.test`.
+2. Backend con Docker: `docker compose up --build` y luego `docker compose exec api python manage.py migrate` y
+   `docker compose exec api python manage.py seed_demo` (hay migraciones nuevas).
+3. Opcional: clave de Maps SDK en `mobile-android/local.properties` → `MAPS_API_KEY=...` para ver el mapa.
+4. En el emulador, fijar la ubicación en Chillán (Extended controls → Location: -36.6066, -72.1034) o usar el
+   botón "Centro de Chillán".
 
 ## 3. Pendiente
-| Elemento | Fase |
+| Elemento | Prioridad sugerida |
 |---|---|
-| Recuperación de contraseña por correo (HU-01) | 2 (requiere definir proveedor de correo, C-09) |
-| Establecimientos, profesionales verificados, membresías | 2 |
-| Solicitudes, aprobación/rechazo, autorización 24 h, revocación, bitácora | 2 |
-| Atenciones, vacunas, alergias, correcciones versionadas, historial multiclínica | 3 |
-| Antecedentes declarados por el tutor (HU-03) e historial con filtros (HU-04) | 3 |
-| Búsqueda por cercanía, ficha con origen/fecha, filtros, ruta externa (HU-07..HU-12) | 4 (alcance reducido propuesto) |
-| Recordatorios con WorkManager (HU-06) | 4 (si hay capacidad) |
-| Despliegue piloto (Render + PostgreSQL/PostGIS gestionado), monitoreo, respaldos (RNF-08, NS-01) | 5 |
-| Textos a `strings.xml`, R8 en *release*, pruebas instrumentadas de UI | 5 |
+| Pase clínico de emergencia QR / enlace firmado (HU-14 *Must* según retroalimentación) | Alta — DEC-024 |
+| Recordatorios con WorkManager (HU-06) | Media |
+| Cápsulas de salud preventiva (retroalimentación) | Media |
+| Adjuntos / foto del carnet de vacunas en el servidor (HU-05) | Baja |
+| Eliminación de cuenta (HU-13, DEC-009) | Decisión pendiente |
+| Inicio con Google | Futuro (no comprometido en el Informe 1) |
+| Despliegue piloto, respaldos, medición RNF-04 | Fase 5 |
 
 ## 4. Bloqueado / dependencias externas
 | Elemento | Bloqueo | Acción |
 |---|---|---|
-| Compilación Android en el entorno asistido | Sin Android SDK ni acceso a `maven.google.com` | El equipo compila en Android Studio |
-| Mapa embebido (HU-10) | Clave de Google Maps Platform con facturación | Decidir si se habilita; alternativa sin clave: botón "Cómo llegar" |
-| Decisión HU-13 vs. registros clínicos | DEC-009 | Equipo / profesor |
-| Evidencia B2B | Sin validación con veterinarias (C-06) | Entrevista breve con los ≥ 2 establecimientos colaboradores |
-| Confirmación escrita de la retroalimentación | No hay registro en el repositorio | Solicitar al profesor por correo |
+| Compilación Android en el entorno asistido | Sin acceso a `maven.google.com` | El equipo compila en Android Studio |
+| Mapa embebido | Clave de Maps SDK (requiere cuenta de facturación de Google Cloud) | Sin clave funciona en modo lista + ruta externa |
+| Correo real de recuperación | Proveedor SMTP no definido | En desarrollo el código se ve en la consola del servidor |
+| Evidencia B2B | Sin entrevistas ni cartas de las clínicas colaboradoras (lo exige la retroalimentación) | Entrevista breve con ≥ 2 establecimientos |
 
 ## 5. Pruebas realizadas
-| Fecha | Prueba | Resultado | Evidencia |
-|---|---|---|---|
-| 01-11-2026 | 51 pruebas automatizadas backend (PostgreSQL 16 + PostGIS 3.4) | ✅ 51/51 | `evidencias/fase1/pruebas_backend.md` |
-| 01-11-2026 | Prueba de humo HTTP con servidor en ejecución | ✅ 14/14 | `evidencias/fase1/smoke_test_api.md` |
-| 01-11-2026 | Persistencia verificada con consulta SQL directa | ✅ | `evidencias/fase1/persistencia_postgresql.md` |
-| 01-11-2026 | `check --deploy` con settings de producción | ✅ (1 aviso intencional) | este documento |
-| 01-11-2026 | Validación OpenAPI | ✅ | `docs/api/openapi.yaml` |
-| 01-11-2026 | Dominio Android y `SessionManager` compilados con kotlinc + arnés | ✅ 25/25 | `evidencias/fase1/pruebas_android_dominio.md` |
-| — | Compilación y ejecución de la app en emulador | ⏳ | — |
-| — | Pruebas en Windows de los integrantes | ⏳ | — |
+| Fecha | Prueba | Resultado |
+|---|---|---|
+| 08-11-2026 | 91 pruebas automatizadas backend (PostgreSQL 16 + PostGIS 3.4) | ✅ 91/91 |
+| 08-11-2026 | Validación OpenAPI | ✅ |
+| 08-11-2026 | Recorrido HTTP manual del flujo veterinario y comparación de JSON con los DTO de la app | ✅ |
+| 08-11-2026 | Compilación Kotlin 2.1 + Compose (603 clases, 0 errores) y 12/12 pruebas JUnit de `ValidatorsTest` | ✅ |
+| 08-11-2026 | `gradle assembleDebug` + instalación en emulador desde Android Studio | ✅ |
+| 08-11-2026 | Recorrido en emulador contra el backend en Docker: Mis mascotas → ficha → ficha clínica; Buscar veterinaria (permiso, respaldo a centro de Chillán, abiertas primero, ficha del establecimiento); solicitud de vet1 por código → aviso en campanita → Autorizar 24 h → registro del veterinario visible en la ficha del tutor | ✅ |
+| — | Pantallas del profesional en la app (requiere iniciar sesión como `vet1.demo`) | ⏳ prueba manual del equipo |
 
 ## 6. Limitaciones conocidas
-- Los tiempos medidos son de desarrollo local y **no** sirven para RNF-04 (se miden en el piloto).
-- La caché de *throttling* es local al proceso (en el piloto con varios procesos conviene una caché compartida).
-- `docker-compose.yml` y `Dockerfile` no se ejecutaron en este entorno (sin demonio Docker); su sintaxis fue validada.
-- El listado de mascotas en la app carga hasta 100 por página (suficiente para el piloto).
-- El panel profesional del incremento 1 es solo informativo.
-- La política de privacidad es un **borrador** sin revisión legal.
-
-## 7. Riesgos para el cronograma (evaluación honesta)
-- **Atraso**: según el Informe 1, al 25-oct debían existir cuentas y catálogo; el repositorio estaba vacío al 1-nov.
-- **Carga**: Fases 2–3 (núcleo nuevo) + Fase 4 (compromisos del Informe 1) + Informe 2 en ≈ 4 semanas.
-- **Mitigación**: plan DEC-018 (Fase 4 reducida), priorizar el escenario de demostración con dos clínicas, congelar
-  alcance tras aprobar el Informe 2.
+- Todos los establecimientos, cuentas y antecedentes de `seed_demo` son **ficticios** ([DEMO]/[SIMULADO]).
+- "Abierto" se calcula con el horario declarado; no confirma atención ni cupos (Tabla 12 del Informe 1).
+- La foto de la mascota no se sincroniza entre teléfonos ni la ve la veterinaria.
+- El umbral de antigüedad se configura por variable de entorno, no desde el panel.
+- Los textos de la app siguen en Kotlin (DEC-017).

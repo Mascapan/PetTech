@@ -2,8 +2,10 @@
 
 **Fuentes y jerarquía**
 
-1. Retroalimentación más reciente del profesor (posterior al Informe 1), **informada por el equipo el 1-11-2026**.
-   No se dispone de un registro escrito en el repositorio; se recomienda obtener confirmación escrita (correo o acta).
+1. Retroalimentación más reciente del profesor: **escrita, del 28-10-2026** (`1er informe/retroalimentacion.docx`,
+   46,6/60). Recomienda ficha clínica estandarizada, HU-14 como *Must* (pase clínico QR / enlace firmado), primera
+   contención asistida y cápsulas preventivas (ver DEC-024). Además, el equipo informó el 1-11-2026 el foco en el
+   historial compartido entre veterinarias autorizadas por el tutor.
 2. *Proyecto de Título – Informe 1 v3* (Tabla 8 historias de usuario, Tabla 9 RNF, Tabla 15 alcance) — línea base.
 3. Decisiones del equipo registradas en [`DECISIONES.md`](DECISIONES.md).
 
@@ -15,20 +17,20 @@ Convención de estado: ✅ implementado y verificado · 🟡 implementado parcia
 
 | ID | Historia (resumen) | Prioridad I1 | Estado | Incremento |
 |---|---|---|---|---|
-| HU-01 | Tutor crea cuenta e inicia sesión con correo y contraseña; rechaza correos duplicados; **recupera acceso por correo**; acepta política de privacidad | Must | 🟡 (falta recuperación por correo) | 1 |
+| HU-01 | Tutor crea cuenta e inicia sesión con correo y contraseña; rechaza correos duplicados; **recupera acceso por correo**; acepta política de privacidad | Must | ✅ backend (recuperación con código por correo) · 🟡 app | 1–2 |
 | HU-02 | Tutor registra y edita perfil de una o más mascotas (nombre, especie, fecha aprox.; microchip opcional declarado); asociada solo a su tutor; editar y eliminar | Must | ✅ | 1 |
-| HU-03 | Tutor registra vacunas, desparasitaciones y controles (tipo, fecha, observación, próxima fecha; sin fechas futuras para eventos realizados) | Must | ⏳ — se reinterpreta como **antecedente declarado por el tutor**, distinto del registro profesional (ver C-04) | 3 |
-| HU-04 | Tutor consulta historial cronológico, filtra por tipo, ve próxima fecha | Must | ⏳ — ahora incluye registros de veterinarias | 3 |
+| HU-03 | Tutor registra vacunas, desparasitaciones y controles (tipo, fecha, observación, próxima fecha; sin fechas futuras para eventos realizados) | Must | ✅ backend · 🟡 app — antecedente **declarado por el tutor**, distinto del registro profesional (C-04) | 2 |
+| HU-04 | Tutor consulta historial cronológico, filtra por tipo, ve próxima fecha | Must | ✅ backend · 🟡 app — incluye registros de veterinarias y resumen clínico | 2 |
 | HU-05 | Adjuntar fotografías/documentos | Should | ⏳ (deseable) | — |
 | HU-06 | Recordatorio local antes de próxima fecha (WorkManager) | Should | ⏳ | 4 |
-| HU-07 | Buscar establecimientos cercanos (permiso de ubicación al buscar; orden por distancia; elegir punto si se rechaza) | Must | ⏳ | 4 |
-| HU-08 | Filtrar por urgencias, servicio y "abierto según horario declarado" | Must | ⏳ | 4 |
-| HU-09 | Ficha del establecimiento con origen y fecha de verificación; sin cupos ni promesa de atención | Must | ⏳ | 4 |
-| HU-10 | Mapa y apertura de ruta en app de navegación | Must | ⏳ (mapa depende de clave de Google Maps) | 4 |
-| HU-11 | Administrador registra/actualiza establecimientos con bitácora | Must | ⏳ | 2 / 4 |
-| HU-12 | Administrador gestiona estado de verificación y umbral de antigüedad | Must | ⏳ | 4 |
+| HU-07 | Buscar establecimientos cercanos (permiso de ubicación al buscar; orden por distancia; elegir punto si se rechaza) | Must | ✅ backend · 🟡 app | 2 |
+| HU-08 | Filtrar por urgencias, servicio y "abierto según horario declarado" | Must | ✅ backend · 🟡 app | 2 |
+| HU-09 | Ficha del establecimiento con origen y fecha de verificación; sin cupos ni promesa de atención | Must | ✅ backend · 🟡 app | 2 |
+| HU-10 | Mapa y apertura de ruta en app de navegación | Must | 🟡 app (mapa requiere `MAPS_API_KEY`; ruta por intent sin clave) | 2 |
+| HU-11 | Administrador registra/actualiza establecimientos con bitácora | Must | 🟡 Django Admin + LogEntry (revisión manual pendiente) | 2 |
+| HU-12 | Administrador gestiona estado de verificación y umbral de antigüedad | Must | 🟡 estados en Admin; umbral por variable `CLINIC_STALE_DAYS` | 2 |
 | HU-13 | Titular elimina su cuenta y sus datos | Must | ⏳ — **en conflicto** con la conservación de registros clínicos (C-03) | Por decidir |
-| HU-14 | Exportar historial de una mascota | Could | ⏳ — parcialmente superada por el acceso autorizado (C-08) | — |
+| HU-14 | Exportar historial de una mascota | Could → **Must según retroalimentación** | ⏳ — el profesor pide un pase clínico QR / enlace firmado (DEC-024) | 3 |
 
 ## 2. Requerimientos no funcionales del Informe 1
 

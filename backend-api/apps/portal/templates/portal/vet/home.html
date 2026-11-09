@@ -1,0 +1,26 @@
+{% extends "portal/base.html" %}{% block title %}Código PetTech{% endblock %}
+{% block head %}{% if has_pending %}<meta http-equiv="refresh" content="15">{% endif %}{% endblock %}
+{% block content %}
+<div class="top"><div><h1>Ingresar código PetTech</h1>
+<p class="sub">{% if membership %}Atiendes en <strong>{{ membership.clinic.name }}</strong>.{% endif %} Pide al tutor el código de su mascota y solicita acceso a la ficha clínica.</p></div></div>
+{% if blocked %}<div class="msg error">{{ blocked }}</div>{% else %}
+<div class="grid g2">
+<div class="card"><h2>Solicitar acceso</h2><form method="post" novalidate>{% csrf_token %}
+{% include "portal/_field.html" with field=form.public_code %}{% include "portal/_field.html" with field=form.reason %}
+<button class="btn">Solicitar acceso</button></form>
+<p class="muted">El tutor recibe la solicitud en su app y decide. Si autoriza, tu veterinaria tendrá acceso por 24 horas. El código por sí solo no da acceso.</p></div>
+<div class="card"><h2>¿Cómo funciona?</h2><ol>
+<li>Ingresas el código que te muestra el tutor (PT-XXXX-XXXX).</li>
+<li>El tutor ve tu nombre y el de tu veterinaria en su app y autoriza o rechaza.</li>
+<li>Con autorización vigente abres la ficha, revisas antecedentes de cualquier veterinaria de la red y registras la atención.</li>
+<li>Todo queda en una bitácora que el tutor puede ver.</li></ol></div>
+</div>
+<div class="card"><h2>Mis solicitudes {% if has_pending %}<span class="muted" style="font-weight:400">· se actualiza sola cada 15 s</span>{% endif %}</h2>
+<table><thead><tr><th>Fecha</th><th>Código</th><th>Mascota</th><th>Estado</th><th></th></tr></thead><tbody>
+{% for x in rows %}<tr><td>{{ x.r.created_at|date:"d-m-Y H:i" }}</td><td class="code">{{ x.r.pet.public_code }}</td><td>{{ x.pet_name|default:"—" }}</td>
+<td><span class="tag {% if x.status == 'APPROVED' %}t-green{% elif x.status == 'PENDING' %}t-amber{% elif x.status == 'EXPIRED' %}t-grey{% else %}t-red{% endif %}">{{ x.label }}</span>
+{% if x.status == 'APPROVED' %}<div class="muted">hasta {{ x.r.expires_at|date:"d-m H:i" }}</div>{% endif %}</td>
+<td>{% if x.status == 'APPROVED' %}<a class="btn small" href="{% url 'portal:vet-record' x.r.pet.public_code %}">Abrir ficha clínica</a>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="5" class="muted">Aún no solicitas accesos.</td></tr>{% endfor %}</tbody></table></div>
+{% endif %}
+{% endblock %}

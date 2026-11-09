@@ -13,19 +13,23 @@ Instrucciones para cualquier sesión de asistencia (humana o IA) que trabaje en 
 Android nativo (Kotlin) → API REST Django + DRF + GeoDjango (monolito modular) → PostgreSQL + PostGIS.
 - La app móvil nunca accede a la base de datos.
 - Django Admin para administración interna.
-- Prohibido introducir: React, Flutter, Firebase/Firestore, Django Templates como app de usuario, otra BD,
-  microservicios, IA, pagos, chatbots, telemedicina, marketplace, iOS.
-- Maps SDK for Android y WorkManager solo cuando se implementen sus historias (Fase 4).
+- Portal web (`apps/portal`, Django Templates) SOLO para administrador, veterinarias y profesionales (DEC-025).
+  El tutor usa exclusivamente la app Android.
+- Prohibido introducir: React, Flutter, Firebase/Firestore, otra BD, microservicios, IA, pagos, chatbots,
+  telemedicina, marketplace, iOS.
+- Maps SDK for Android (Maps Compose, clave opcional en `local.properties`) implementado; WorkManager solo cuando se implemente HU-06.
+- La app móvil sigue el boceto del equipo (DEC-019): login → Mis mascotas → ficha de mascota → ficha clínica; Buscar veterinaria.
 
 ## Módulos del backend (`backend-api/apps/`)
 | App | Responsabilidad | Estado |
 |---|---|---|
 | `core` | errores uniformes, permisos por rol, paginación, salud, datos demo | Fase 1 |
-| `accounts` | usuarios, roles (TUTOR, PROFESSIONAL, ADMIN), tokens | Fase 1 |
+| `accounts` | usuarios, roles (TUTOR, PROFESSIONAL, CLINIC, ADMIN), tokens, recuperación y eliminación de cuenta | ✅ |
 | `pets` | mascotas, código PetTech, carnet | Fase 1 |
-| `clinics` | establecimientos, profesionales, verificación, ubicación | Fase 2 / 4 |
-| `access_control` | solicitudes, autorizaciones temporales, revocación, bitácora | Fase 2 |
-| `clinical_records` | atenciones, vacunas, alergias, correcciones auditables | Fase 3 |
+| `clinics` | establecimientos, profesionales, verificación, ubicación | Incremento 2 ✅ |
+| `access_control` | solicitudes, autorizaciones temporales, revocación, bitácora | Incremento 2 ✅ |
+| `clinical_records` | atenciones, vacunas, alergias, correcciones auditables | Incremento 2 ✅ |
+| `portal` | portal web por rol, cuadros de análisis, páginas públicas (privacidad, eliminación) | Incremento 3 ✅ |
 
 ## Convenciones
 - Código en inglés (nombres de clases, campos, endpoints); textos al usuario, comentarios y documentación en **español de Chile**.

@@ -1,9 +1,11 @@
 import logging
 
 from drf_spectacular.utils import extend_schema, extend_schema_view
+from django.db import transaction
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
+from apps.core.exceptions import Conflict
 from apps.core.permissions import IsTutor
 
 from .models import Pet
@@ -44,6 +46,24 @@ class PetViewSet(viewsets.ModelViewSet):
         logger.info("Mascota actualizada pet_id=%s owner_id=%s", pet.pk, self.request.user.pk)
 
     def perform_destroy(self, instance):
+        """
+        Los registros de veterinarias no se eliminan en cascada (RN-06; DEC-009 pendiente):
+        si existen, la eliminación se rechaza con un mensaje claro. Los antecedentes
+        declarados por el tutor sí se eliminan junto con la mascota.
+        """
+        from apps.clinical_records.models import ClinicalEntry, Origin
+
         pet_id = instance.pk
-        instance.delete()
+        entries = ClinicalEntry.objects.filter(pet=instance)
+        if entries.filter(origin=Origin.PROFESSIONAL).exists():
+            raise Conflict(
+                "Esta mascota tiene registros de veterinarias, que no pueden eliminarse desde la aplicación. "
+                "Escríbenos para gestionar la solicitud."
+            )
+        with transaction.atomic():
+            # Primero las correcciones (dependen de la versión anterior), luego el resto.
+            for entry in entries.filter(corrects__isnull=False).order_by("-created_at"):
+                entry.delete()
+            entries.all().delete()
+            instance.delete()
         logger.info("Mascota eliminada pet_id=%s owner_id=%s", pet_id, self.request.user.pk)

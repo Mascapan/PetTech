@@ -1,0 +1,9 @@
+{% with w=field.field.widget %}
+<div class="field{% if w.input_type == 'checkbox' and not w.allow_multiple_selected %} inline{% endif %}">
+  {% if w.input_type == 'checkbox' and not w.allow_multiple_selected %}{{ field }}<label for="{{ field.id_for_label }}">{{ field.label }}</label>
+  {% else %}<label for="{{ field.id_for_label }}">{{ field.label }}</label>
+  <div class="{% if w.allow_multiple_selected %}checks{% endif %}">{{ field }}</div>{% endif %}
+  {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+  {% for e in field.errors %}<div class="err">{{ e }}</div>{% endfor %}
+</div>
+{% endwith %}

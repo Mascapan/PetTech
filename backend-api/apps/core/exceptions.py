@@ -92,3 +92,11 @@ def api_exception_handler(exc, context):
             message = detail_text
     response.data = error_payload(code, message)
     return response
+
+
+class Conflict(exceptions.APIException):
+    """La operación contradice el estado actual del recurso (409)."""
+
+    status_code = status.HTTP_409_CONFLICT
+    default_code = "conflict"
+    default_detail = "La operación no es posible en el estado actual."

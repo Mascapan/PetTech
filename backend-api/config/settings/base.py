@@ -49,8 +49,10 @@ LOCAL_APPS = [
     "apps.core",
     "apps.accounts",
     "apps.pets",
-    # Fase 2: "apps.clinics", "apps.access_control"
-    # Fase 3: "apps.clinical_records"
+    "apps.clinics",
+    "apps.access_control",
+    "apps.clinical_records",
+    "apps.portal",  # portal web: administrador, veterinarias y profesionales (DEC-025)
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -173,6 +175,33 @@ PETTECH_TOKEN_TTL = {
 }
 PETTECH_MAX_TOKENS_PER_USER = env.int("MAX_TOKENS_PER_USER", default=5)
 
+# Autorización temporal del tutor a un establecimiento (RN-12): 24 h por defecto, configurable.
+PETTECH_ACCESS_GRANT_HOURS = env.int("ACCESS_GRANT_HOURS", default=24)
+# Umbral de antigüedad de la información de un establecimiento (HU-09, HU-12). Se definirá con las clínicas en el piloto.
+PETTECH_CLINIC_STALE_DAYS = env.int("CLINIC_STALE_DAYS", default=30)
+# Recuperación de contraseña (HU-01): código de un solo uso.
+PETTECH_PASSWORD_RESET_MINUTES = env.int("PASSWORD_RESET_MINUTES", default=15)
+
+# Correo saliente. En desarrollo se imprime en la consola del servidor (no se envía).
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
+EMAIL_HOST = env("EMAIL_HOST", default="localhost")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="PetTech <no-responder@pettech.test>")
+
+# Portal web (sesión de navegador, separada de los tokens de la app).
+LOGIN_URL = "portal:login"
+LOGIN_REDIRECT_URL = "portal:home"
+SESSION_COOKIE_AGE = env.int("PORTAL_SESSION_HOURS", default=8) * 3600
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+# Correo de contacto publicado en la política de privacidad y en la página de eliminación de cuenta.
+PETTECH_CONTACT_EMAIL = env("PETTECH_CONTACT_EMAIL", default="contacto@pettech.test")
+PORTAL_LOGIN_MAX_ATTEMPTS = env.int("PORTAL_LOGIN_MAX_ATTEMPTS", default=8)
+
 # Versión vigente de la política de privacidad que el tutor debe aceptar (HU-01).
 PETTECH_PRIVACY_POLICY_VERSION = env("PRIVACY_POLICY_VERSION", default="2026-11-borrador")
 
@@ -181,9 +210,10 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "PetTech API",
     "DESCRIPTION": (
         "API REST del prototipo PetTech (Proyecto de Título TIH184, INACAP). "
-        "Incremento 1: cuentas, autenticación y mascotas del tutor."
+        "Incremento 2: cuentas, mascotas, ficha clínica estandarizada, acceso de veterinarias por "
+        "código PetTech con autorización del tutor, bitácora y búsqueda de establecimientos."
     ),
-    "VERSION": "1.0.0-fase1",
+    "VERSION": "2.0.0-incremento2",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
     "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],

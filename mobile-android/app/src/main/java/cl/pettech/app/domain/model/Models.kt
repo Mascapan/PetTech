@@ -6,6 +6,7 @@ import java.time.LocalDate
 enum class Role {
     TUTOR,
     PROFESSIONAL,
+    CLINIC,
     ADMIN,
     UNKNOWN,
     ;

@@ -1,0 +1,4 @@
+{% extends "portal/base.html" %}{% block title %}Sin permiso{% endblock %}
+{% block content %}<div class="card"><h1>Sin permiso</h1>
+<p class="sub">{{ message|default:"Tu cuenta no tiene acceso a esta sección del portal." }}</p>
+<p><a class="btn ghost" href="{% url 'portal:home' %}">Volver al inicio</a></p></div>{% endblock %}

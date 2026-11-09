@@ -16,19 +16,41 @@ val localProps = Properties().apply {
     if (file.exists()) file.inputStream().use { load(it) }
 }
 val apiBaseUrlDebug: String = localProps.getProperty("pettech.apiBaseUrl") ?: "http://10.0.2.2:8000/api/v1/"
+// Clave de Maps SDK for Android (HU-10). Opcional: sin clave la búsqueda funciona en modo lista.
+//   MAPS_API_KEY=AIza...   (en local.properties; nunca en Git)
+val mapsApiKey: String = localProps.getProperty("MAPS_API_KEY") ?: ""
 val apiBaseUrlRelease: String = localProps.getProperty("pettech.apiBaseUrl.release") ?: "https://api.pettech.invalid/api/v1/"
+
+// Firma de publicación (Google Play). El keystore y sus claves viven SOLO en local.properties (no versionado):
+//   pettech.upload.storeFile=keystore/pettech-upload.jks
+//   pettech.upload.storePassword=...   pettech.upload.keyAlias=pettech-upload   pettech.upload.keyPassword=...
+val uploadStoreFile: String? = localProps.getProperty("pettech.upload.storeFile")
 
 android {
     namespace = "cl.pettech.app"
-    compileSdk = 35
+    // Google Play exige targetSdk 36 (Android 16) para apps nuevas desde el 31-08-2026.
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "cl.pettech.app"
         minSdk = 28 // Android 9 (RNF-06)
-        targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0-incremento1"
+        targetSdk = 36
+        versionCode = 3
+        versionName = "0.3.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
+        buildConfigField("boolean", "MAPS_ENABLED", mapsApiKey.isNotBlank().toString())
+    }
+
+    signingConfigs {
+        if (uploadStoreFile != null) {
+            create("upload") {
+                storeFile = rootProject.file(uploadStoreFile)
+                storePassword = localProps.getProperty("pettech.upload.storePassword")
+                keyAlias = localProps.getProperty("pettech.upload.keyAlias")
+                keyPassword = localProps.getProperty("pettech.upload.keyPassword")
+            }
+        }
     }
 
     buildTypes {
@@ -41,6 +63,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrlRelease\"")
+            if (uploadStoreFile != null) signingConfig = signingConfigs.getByName("upload")
             buildConfigField("boolean", "HTTP_LOGGING", "false")
         }
     }
@@ -85,6 +108,10 @@ dependencies {
     implementation(libs.retrofit.kotlinx.serialization)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
+
+    implementation(libs.play.services.location)
+    implementation(libs.play.services.maps)
+    implementation(libs.maps.compose)
 
     debugImplementation(libs.androidx.ui.tooling)
 

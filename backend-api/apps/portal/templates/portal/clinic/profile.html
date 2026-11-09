@@ -1,0 +1,19 @@
+{% extends "portal/base.html" %}{% block title %}Horario y servicios{% endblock %}
+{% block content %}
+<div class="top"><div><h1>Horario y servicios</h1>
+<p class="sub">Lo que publiques aquí lo ven los tutores en la app al buscar veterinarias, como «Confirmado por el establecimiento».</p></div></div>
+{% if error %}<div class="msg error">{{ error }}</div>{% endif %}
+<form method="post" novalidate>{% csrf_token %}
+<div class="grid g2">
+<div class="card"><h2>Horario de atención</h2>
+<table class="hours"><thead><tr><th>Día</th><th>Abre</th><th>Desde</th><th>Hasta</th></tr></thead><tbody>
+{% for d in days %}<tr><td><strong>{{ d.label }}</strong></td><td>{{ d.open_day }}</td><td>{{ d.opens_at }}</td><td>{{ d.closes_at }}</td></tr>
+{% for e in d.non_field_errors %}<tr><td colspan="4" class="err">{{ d.label }}: {{ e }}</td></tr>{% endfor %}{% endfor %}
+</tbody></table>
+<p class="muted">Turno nocturno: si la hora "hasta" es menor que "desde" (p. ej., 20:00 a 08:00), termina al día siguiente.</p></div>
+<div class="card"><h2>Urgencias, contacto y servicios</h2>
+{% for f in form %}{% include "portal/_field.html" with field=f %}{% endfor %}
+<p class="muted">Última publicación: {{ clinic.verified_at|date:"d-m-Y H:i" }} ({{ clinic.get_info_origin_display }}).</p>
+<button class="btn">Publicar información</button></div>
+</div></form>
+{% endblock %}

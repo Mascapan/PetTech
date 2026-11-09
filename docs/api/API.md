@@ -92,3 +92,27 @@ Authorization: Token pt_3f1c…
 | 2 | `/clinics/`, `/professional/pets/lookup/?code=`, `/access-requests/`, `/access-requests/{id}/approve/`, `/access-requests/{id}/reject/`, `/authorizations/`, `/authorizations/{id}/revoke/` |
 | 3 | `/pets/{id}/clinical-history/`, `/clinical-records/`, `/clinical-records/{id}/corrections/`, `/vaccinations/` |
 | 4 | `/clinics/nearby/?lat=&lng=&radius=&emergency=&open_now=` |
+
+## Incremento 2 — nuevos endpoints
+
+| Método y ruta | Rol | Descripción |
+|---|---|---|
+| `POST /auth/password-reset/` | público | Envía un código de 6 dígitos (respuesta idéntica exista o no el correo) |
+| `POST /auth/password-reset/confirm/` | público | `{email, code, new_password}`; cierra todas las sesiones |
+| `GET /pets/{id}/clinical-record/?type=` | tutor | Ficha clínica: `{pet, summary, entries}` |
+| `POST /pets/{id}/clinical-record/entries/` | tutor | Antecedente declarado |
+| `POST /pets/{id}/clinical-record/entries/{entry}/correct/` | tutor | Corrección versionada (solo declarados) |
+| `GET /pets/{id}/clinical-record/entries/{entry}/history/` | tutor | Versiones de un antecedente |
+| `GET /clinics/?lat&lng&radius_km&emergency&open_now&service` | autenticado | Búsqueda; abiertas según horario primero |
+| `GET /clinics/{id}/` · `GET /clinics/services/` | autenticado | Ficha del establecimiento · servicios |
+| `GET /access/requests/?status&pet` | tutor / profesional | Solicitudes propias (tutor: sobre sus mascotas) |
+| `POST /access/requests/` | profesional verificado | `{public_code, reason}` |
+| `POST /access/requests/{id}/approve/` · `reject/` · `revoke/` | tutor | Decisión y revocación |
+| `GET /access/pets/{id}/log/` | tutor | Bitácora de la mascota |
+| `GET /professional/me/` | profesional | Establecimiento verificado |
+| `GET /professional/pets/{code}/clinical-record/` | profesional autorizado | Ficha (sin id interno); se registra en bitácora |
+| `POST /professional/pets/{code}/clinical-record/entries/` | profesional autorizado | Registro profesional |
+| `POST /professional/pets/{code}/clinical-record/entries/{entry}/correct/` | profesional autorizado | Corrección (solo su establecimiento) |
+
+Tipos de antecedente: `VACCINE`, `DEWORMING`, `VISIT`, `ALLERGY`, `CHRONIC_CONDITION`, `SURGERY`, `MEDICATION`, `WEIGHT`.
+Sin autorización vigente, las rutas profesionales responden **404**.

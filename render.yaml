@@ -1,0 +1,35 @@
+# Plano de despliegue del piloto en Render (https://render.com) — NO ejecutado aún.
+# Crea: base PostgreSQL gestionada + servicio web Docker con la API, el portal y las páginas públicas.
+# Pasos: subir el repositorio a GitHub → Render → "New Blueprint" → elegir este archivo.
+# Luego, en el servicio web, completar DJANGO_ALLOWED_HOSTS y DJANGO_CSRF_TRUSTED_ORIGINS con el dominio asignado.
+databases:
+  - name: pettech-db
+    databaseName: pettech
+    user: pettech
+    plan: basic-256mb        # plan pagado: el gratuito expira y no tiene respaldos (RNF-08)
+
+services:
+  - type: web
+    name: pettech-api
+    runtime: docker
+    rootDir: backend-api
+    dockerfilePath: ./Dockerfile
+    plan: starter            # sin suspensión por inactividad (RNF-08)
+    healthCheckPath: /api/v1/health/
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: DJANGO_SECRET_KEY
+        sync: false          # 50+ caracteres: python -c "import secrets; print(secrets.token_urlsafe(64))"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pettech-db
+          property: connectionString
+      - key: DJANGO_ALLOWED_HOSTS
+        sync: false          # p. ej. pettech-api.onrender.com
+      - key: DJANGO_CSRF_TRUSTED_ORIGINS
+        sync: false          # p. ej. https://pettech-api.onrender.com
+      - key: PETTECH_CONTACT_EMAIL
+        sync: false
+      - key: DJANGO_ADMIN_URL
+        value: gestion-interna/

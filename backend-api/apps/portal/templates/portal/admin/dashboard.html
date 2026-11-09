@@ -1,0 +1,43 @@
+{% extends "portal/base.html" %}{% load static %}{% block title %}Cuadros de análisis{% endblock %}
+{% block content %}
+<div class="top"><div><h1>Cuadros de análisis</h1>
+<p class="sub">Cifras agregadas de la red PetTech. No incluye datos clínicos de mascotas concretas.</p></div>
+<a class="btn" href="{% url 'portal:admin-clinic-new' %}">＋ Nueva veterinaria</a></div>
+
+<div class="kpis">
+  <div class="kpi"><div class="v">{{ m.kpis.tutors }}</div><div class="l">Tutores registrados</div></div>
+  <div class="kpi"><div class="v">{{ m.kpis.pets }}</div><div class="l">Mascotas con carnet</div></div>
+  <div class="kpi"><div class="v">{{ m.kpis.clinics_network }}<span class="muted"> / {{ m.kpis.clinics_total }}</span></div><div class="l">Veterinarias en la red / en el catálogo</div></div>
+  <div class="kpi"><div class="v">{{ m.kpis.professionals }}</div><div class="l">Profesionales autorizados</div></div>
+  <div class="kpi"><div class="v">{{ m.requests.total }}</div><div class="l">Solicitudes de acceso</div></div>
+  <div class="kpi"><div class="v">{% if m.requests.approval_rate is not None %}{{ m.requests.approval_rate }}%{% else %}—{% endif %}</div><div class="l">Tasa de aprobación del tutor</div></div>
+  <div class="kpi"><div class="v">{% if m.requests.median_response_min is not None %}{{ m.requests.median_response_min }}<span class="muted"> min</span>{% else %}—{% endif %}</div><div class="l">Mediana de respuesta del tutor</div></div>
+  <div class="kpi"><div class="v">{{ m.kpis.records_professional }}</div><div class="l">Registros de veterinarias <span class="muted">(+{{ m.kpis.records_owner }} declarados)</span></div></div>
+</div>
+
+<div class="grid g2">
+  <div class="card"><h2>Solicitudes de acceso (últimos 14 días)</h2><div class="chart-box"><canvas id="c1"></canvas></div></div>
+  <div class="card"><h2>Estado de las solicitudes</h2><div class="chart-box"><canvas id="c2"></canvas></div></div>
+  <div class="card"><h2>Antecedentes registrados por tipo</h2><div class="chart-box"><canvas id="c3"></canvas></div></div>
+  <div class="card"><h2>Registros por veterinaria</h2><div class="chart-box"><canvas id="c4"></canvas></div></div>
+  <div class="card"><h2>Actualidad del catálogo</h2><div class="chart-box"><canvas id="c5"></canvas></div>
+    <p class="muted">Responde al problema de horarios desactualizados: idealmente todo en "confirmado y vigente".</p></div>
+  <div class="card"><h2>Registros clínicos nuevos (últimos 14 días)</h2><div class="chart-box"><canvas id="c6"></canvas></div></div>
+</div>
+<p class="muted">Generado el {{ m.generated_at|date:"d-m-Y H:i" }}. Los datos de demostración están marcados como [DEMO]/[SIMULADO].</p>
+{{ m.charts|json_script:"charts" }}{{ m.requests.by_status|json_script:"status" }}
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'portal/vendor/chart.umd.min.js' %}"></script>
+<script src="{% static 'portal/charts.js' %}"></script>
+<script>
+const C = JSON.parse(document.getElementById('charts').textContent);
+const S = JSON.parse(document.getElementById('status').textContent);
+ptLine('c1', C.requests_daily, 'Solicitudes');
+ptDoughnut('c2', {labels: Object.keys(S), values: Object.values(S)});
+ptBar('c3', C.records_by_type, 'Antecedentes', true);
+ptBar('c4', C.records_per_clinic, 'Registros', true);
+ptDoughnut('c5', C.catalog, ['#1b6b3a', '#e0a100', '#9aa9a7']);
+ptLine('c6', C.records_daily, 'Registros');
+</script>
+{% endblock %}

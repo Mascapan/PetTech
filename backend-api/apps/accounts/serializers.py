@@ -92,3 +92,21 @@ class AuthResponseSerializer(serializers.Serializer):
     token = serializers.CharField()
     expiry = serializers.DateTimeField()
     user = UserSerializer()
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=254)
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=254)
+    code = serializers.RegexField(r"^\d{6}$", error_messages={"invalid": "El código tiene 6 dígitos."})
+    new_password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    def validate(self, attrs):
+        candidate = User.objects.filter(email__iexact=attrs["email"]).first() or User(email=attrs["email"])
+        try:
+            password_validation.validate_password(attrs["new_password"], user=candidate)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"new_password": list(exc.messages)}) from exc
+        return attrs

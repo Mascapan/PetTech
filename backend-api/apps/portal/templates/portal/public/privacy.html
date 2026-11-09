@@ -1,0 +1,22 @@
+{% extends "portal/public/_layout.html" %}{% block title %}Política de privacidad{% endblock %}
+{% block content %}
+<h1>Política de privacidad</h1><p class="sub">Versión {{ version }} · borrador del prototipo académico, sujeto a revisión. No constituye asesoría legal.</p>
+<h2 style="margin-top:20px">1. Quién trata los datos</h2>
+<p>PetTech es un prototipo desarrollado como Proyecto de Título. Durante la etapa de pruebas, el equipo del proyecto es responsable del tratamiento de los datos. Contacto: {{ contact_email }}.</p>
+<h2>2. Qué datos recopilamos</h2>
+<ul><li><strong>Tutores (app):</strong> nombre, correo, contraseña (almacenada solo como hash Argon2id) y los datos que declares sobre tus mascotas (nombre, especie, raza, fecha de nacimiento, microchip y antecedentes).</li>
+<li><strong>Ficha clínica:</strong> antecedentes que registras tú y los que registran veterinarias que <em>tú autorizas</em> (vacunas, controles, alergias, peso, fármacos, etc.).</li>
+<li><strong>Profesionales y veterinarias (portal):</strong> nombre, correo, establecimiento y número de registro declarado.</li>
+<li><strong>Ubicación:</strong> se usa solo en el momento de buscar veterinarias cercanas; no se guarda asociada a tu cuenta.</li>
+<li><strong>Foto de la mascota:</strong> se guarda únicamente en tu teléfono; no se envía al servidor.</li></ul>
+<h2>3. Para qué los usamos</h2>
+<p>Para mantener el carnet y la ficha clínica de tus mascotas, permitir que veterinarias autorizadas por ti consulten y registren atenciones, y mostrarte veterinarias cercanas con su horario declarado. No vendemos datos ni los usamos con fines publicitarios.</p>
+<h2>4. Con quién se comparten</h2>
+<p>Solo con los profesionales de la veterinaria a la que <strong>tú autorizas</strong>, por 24 horas, y puedes revocar el acceso en cualquier momento. Cada consulta y registro queda en una bitácora que puedes revisar en la app. El administrador de PetTech no accede a fichas clínicas.</p>
+<h2>5. Seguridad</h2>
+<p>Comunicación cifrada (HTTPS) en el ambiente publicado, contraseñas con función de derivación de clave, sesiones con expiración, control de acceso en el servidor y registros clínicos no modificables (las correcciones generan una versión nueva).</p>
+<h2>6. Tus derechos</h2>
+<p>Conforme a la Ley N.º 21.719, puedes solicitar acceso, rectificación, supresión, oposición y portabilidad de tus datos escribiendo a {{ contact_email }}. Ver también <a href="{% url 'public-account-deletion' %}">cómo eliminar tu cuenta</a>.</p>
+<h2>7. Datos de prueba</h2>
+<p>Durante el piloto se usan datos ficticios o de participantes que dieron su consentimiento. Los establecimientos marcados [DEMO] no son reales.</p>
+{% endblock %}
