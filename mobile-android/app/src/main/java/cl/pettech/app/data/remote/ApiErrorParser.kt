@@ -14,7 +14,7 @@ class ApiErrorParser(private val json: Json) {
     fun parse(throwable: Throwable): AppError = when (throwable) {
         is HttpException -> fromHttp(throwable)
         is IOException -> AppError(
-            message = "No se pudo conectar con PetTech. Revisa tu conexión a internet o que el servidor esté disponible.",
+            message = "No se pudo conectar con PetTech. Revisa tu conexión a internet e intenta de nuevo: si el servidor estaba en pausa, puede tardar hasta un minuto en responder.",
             kind = AppError.Kind.NETWORK,
         )
         is SerializationException -> AppError(

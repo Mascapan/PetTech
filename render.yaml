@@ -1,35 +1,52 @@
-# Plano de despliegue del piloto en Render (https://render.com) — NO ejecutado aún.
-# Crea: base PostgreSQL gestionada + servicio web Docker con la API, el portal y las páginas públicas.
-# Pasos: subir el repositorio a GitHub → Render → "New Blueprint" → elegir este archivo.
-# Luego, en el servicio web, completar DJANGO_ALLOWED_HOSTS y DJANGO_CSRF_TRUSTED_ORIGINS con el dominio asignado.
+# Plano de despliegue en Render (https://render.com) — API + portal web + base PostgreSQL/PostGIS.
+#
+# Uso: Render → New → Blueprint → elegir este repositorio. Render pedirá los valores marcados
+# con "sync: false" (correo y contraseña del administrador inicial).
+#
+# PLAN ACTUAL: GRATUITO (decisión del equipo, 09-11-2026; DEC-028).
+#   - El servicio web se suspende tras 15 min sin tráfico y tarda ~1 min en volver.
+#   - La base de datos gratuita EXPIRA a los 30 días (14 días de gracia) y no tiene respaldos.
+# ANTES DE INVITAR TESTERS: cambiar a plan pagado desde el panel de Render
+# (o editar "plan" abajo: web → starter; base → basic-256mb) sin perder los datos.
 databases:
   - name: pettech-db
     databaseName: pettech
     user: pettech
-    plan: basic-256mb        # plan pagado: el gratuito expira y no tiene respaldos (RNF-08)
+    plan: free
+    region: virginia
+    postgresMajorVersion: "16"
+    ipAllowList: []          # sin acceso desde internet: solo el servicio web la usa (red interna)
 
 services:
   - type: web
     name: pettech-api
     runtime: docker
     rootDir: backend-api
-    dockerfilePath: ./Dockerfile
-    plan: starter            # sin suspensión por inactividad (RNF-08)
+    dockerfilePath: ./backend-api/Dockerfile   # relativo a la raíz del repositorio
+    dockerContext: ./backend-api
+    plan: free
+    region: virginia
     healthCheckPath: /api/v1/health/
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings.production
       - key: DJANGO_SECRET_KEY
-        sync: false          # 50+ caracteres: python -c "import secrets; print(secrets.token_urlsafe(64))"
+        generateValue: true  # Render genera una clave aleatoria de 256 bits
       - key: DATABASE_URL
         fromDatabase:
           name: pettech-db
           property: connectionString
-      - key: DJANGO_ALLOWED_HOSTS
-        sync: false          # p. ej. pettech-api.onrender.com
-      - key: DJANGO_CSRF_TRUSTED_ORIGINS
-        sync: false          # p. ej. https://pettech-api.onrender.com
-      - key: PETTECH_CONTACT_EMAIL
-        sync: false
       - key: DJANGO_ADMIN_URL
         value: gestion-interna/
+      - key: WEB_CONCURRENCY
+        value: "2"
+      # Administrador inicial (se crea al primer arranque; ver apps/core/management/commands/ensure_admin.py)
+      - key: PETTECH_ADMIN_EMAIL
+        sync: false
+      - key: PETTECH_ADMIN_PASSWORD
+        sync: false          # mínimo 12 caracteres; cámbiala después del primer ingreso
+      - key: PETTECH_ADMIN_NAME
+        value: Administración PetTech
+      - key: PETTECH_CONTACT_EMAIL
+        sync: false          # correo de contacto que aparece en /privacidad/ y /eliminar-cuenta/
+      # El dominio público (RENDER_EXTERNAL_HOSTNAME) lo agrega Render automáticamente.

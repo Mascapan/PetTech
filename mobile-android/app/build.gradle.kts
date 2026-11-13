@@ -118,3 +118,18 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 }
+
+// Protección: no generar un paquete de publicación que apunte a una URL inexistente o sin firma.
+gradle.taskGraph.whenReady {
+    val publishing = allTasks.any { task ->
+        task.project == project && (task.name == "bundleRelease" || task.name == "assembleRelease")
+    }
+    if (publishing) {
+        require(!apiBaseUrlRelease.contains(".invalid") && apiBaseUrlRelease.startsWith("https://")) {
+            "Falta pettech.apiBaseUrl.release (https://...) en local.properties. Ver docs/PUBLICACION_PLAY_STORE.md"
+        }
+        require(uploadStoreFile != null) {
+            "Falta la firma de publicación (pettech.upload.*) en local.properties. Ver docs/PUBLICACION_PLAY_STORE.md"
+        }
+    }
+}

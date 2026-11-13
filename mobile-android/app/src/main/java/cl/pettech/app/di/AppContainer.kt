@@ -47,8 +47,11 @@ class AppContainer(context: Context) {
     )
 
     private val okHttpClient: OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(15, TimeUnit.SECONDS)
+        // El servidor del piloto (plan gratuito de Render) se suspende sin tráfico y tarda ~1 min en volver:
+        // la primera solicitud debe poder esperar ese arranque en vez de fallar (DEC-028).
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(75, TimeUnit.SECONDS)
+        .callTimeout(90, TimeUnit.SECONDS)
         .addInterceptor(AuthInterceptor(sessionManager))
         .apply {
             if (BuildConfig.HTTP_LOGGING) {

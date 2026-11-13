@@ -1,6 +1,6 @@
 # Publicación de PetTech en Google Play (prueba cerrada)
 
-Estado al 08-11-2026: **app y backend preparados; falta desplegar el servidor y crear la cuenta de Play Console**
+Estado al 09-11-2026: **app y backend preparados para Render (plan gratuito); falta crear las cuentas de Render y de Play Console**
 (ambos requieren cuentas y pagos del equipo). Requisitos verificados en la documentación oficial de Google ese día.
 
 ## 0. Requisitos de Google que afectan el calendario
@@ -16,22 +16,33 @@ Estado al 08-11-2026: **app y backend preparados; falta desplegar el servidor y 
 
 ## 1. Desplegar el backend con HTTPS (necesario antes de generar el AAB)
 
-Opción preparada: **Render** (`render.yaml` en la raíz del repositorio; previsto en el Informe 1).
+`render.yaml` (raíz del repositorio) crea en **Render** la base PostgreSQL/PostGIS y el servicio web (API + portal).
+Plan actual: **gratuito** (DEC-028). Preparado para el plan gratuito, que **no tiene consola**: el administrador se
+crea solo al arrancar y el dominio público se configura automáticamente.
 
-1. Subir el repositorio a GitHub (privado). Confirmar que `.env`, `local.properties` y `*.jks` **no** se suben.
-2. Render → *New* → *Blueprint* → elegir el repositorio. Crea la base PostgreSQL y el servicio web.
-3. En el servicio web completar `DJANGO_SECRET_KEY` (50+ caracteres), `DJANGO_ALLOWED_HOSTS`
-   (`pettech-api.onrender.com`), `DJANGO_CSRF_TRUSTED_ORIGINS` (`https://pettech-api.onrender.com`) y
-   `PETTECH_CONTACT_EMAIL` (correo real del equipo).
-4. Al terminar, verificar `https://<dominio>/api/v1/health/` → `{"status":"ok","database":"ok","postgis":"ok"}`.
-5. Crear el administrador: *Shell* del servicio → `python manage.py createsuperuser` (rol ADMIN).
-6. **No** ejecutar `seed_demo` en producción (está bloqueado con `DEBUG=False`). Crear las veterinarias reales desde el portal.
+1. Confirmar que el último commit está en GitHub (`git push`).
+2. Crear la cuenta en https://render.com con **"Sign up with GitHub"** y autorizar el acceso al repositorio `PetTech`.
+3. *New* → **Blueprint** → elegir el repositorio → rama `main`. Render muestra lo que creará (`pettech-db`, `pettech-api`).
+4. Completar las variables que pide:
+   - `PETTECH_ADMIN_EMAIL`: correo con el que entrarás al portal como administrador.
+   - `PETTECH_ADMIN_PASSWORD`: contraseña de **12+ caracteres** (guárdala en un gestor de contraseñas).
+   - `PETTECH_CONTACT_EMAIL`: correo de contacto que verán los usuarios en /privacidad/.
+5. *Apply*. La primera construcción tarda ~10–15 min (instala GDAL). Ver avance en *pettech-api → Logs*;
+   al final deben aparecer `ensure_admin: cuenta de administrador creada.` y `Listening at`.
+6. Copiar el dominio asignado (arriba en *pettech-api*, p. ej. `https://pettech-api.onrender.com`; puede tener un sufijo).
+7. Verificar en el navegador:
+   - `https://<dominio>/api/v1/health/` → `{"status":"ok","database":"ok","postgis":"ok"}`
+   - `https://<dominio>/portal/` → ingresar con el administrador del paso 4 y crear las veterinarias reales.
+8. **No** se cargan datos `[DEMO]` en este servidor (`seed_demo` está bloqueado en producción).
 
-Costos: los planes usados en `render.yaml` son pagados (sin suspensión por inactividad y con respaldos, RNF-08).
-Verificar precios vigentes en render.com antes de contratar; el plan gratuito sirve solo para una demostración corta.
+Limitaciones del plan gratuito (verificadas en la documentación de Render el 09-11-2026):
+- El servicio web se suspende tras **15 min** sin tráfico y tarda **~1 min** en volver (la app espera hasta 90 s).
+- La base gratuita **expira a los 30 días** (14 días de gracia) y **no tiene respaldos**.
+- **Antes de invitar testers**: *pettech-db → Upgrade* (plan pagado) y *pettech-api → Upgrade* (Starter). Se conserva la base.
 
-Verificado en el entorno asistido: arranque con `config.settings.production` + gunicorn + whitenoise, portal,
-estáticos con huella, `/privacidad/` y salud de BD/PostGIS responden 200; `check --deploy` sin errores.
+Verificado en el entorno asistido (09-11-2026): arranque idéntico al de Render (URL `postgres://`, clave de 44
+caracteres, `RENDER_EXTERNAL_HOSTNAME`, gunicorn) → 37 migraciones, estáticos, administrador creado, salud OK,
+portal/privacidad 200, HTTP → HTTPS 301, dominio ajeno 400, registro de tutor por la API OK.
 
 ## 2. Configurar la app para el servidor publicado
 

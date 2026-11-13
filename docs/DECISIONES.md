@@ -31,6 +31,7 @@ del equipo) o **Pendiente**.
 | DEC-024 | Recomendaciones escritas del profesor (pase QR, IA de primera contención, cápsulas) | **Pendiente** |
 | DEC-025 | Portal web (Django Templates) para administrador, veterinarias y profesionales | Adoptada (pedido del equipo, 08-11-2026) |
 | DEC-026 | Rol CLINIC: la veterinaria autoriza a sus profesionales y publica su horario | Adoptada |
+| DEC-028 | Piloto en Render plan gratuito; pasar a pagado antes de invitar testers | Adoptada (09-11-2026) |
 | DEC-027 | Preparación para Google Play: targetSdk 36, firma fuera de Git, privacidad y eliminación de cuenta | Adoptada |
 
 ---
@@ -234,3 +235,13 @@ manualmente por un integrante con SLA de 1 día hábil: ahora la fuente es el pr
   "Mi cuenta → Eliminar mi cuenta" registra la solicitud (`AccountDeletionRequest`) y cierra las sesiones.
   La ejecución sigue el criterio recomendado en DEC-009 (opción 2).
 - Backend listo para producción: gunicorn + whitenoise + `render.yaml` (no desplegado: requiere cuenta del equipo).
+
+### DEC-028 — Despliegue del piloto en Render, plan gratuito (09-11-2026)
+**Contexto:** la app publicada no puede usar `localhost`; se necesita una base de datos y API únicas para app, portal y
+equipo. **Decisión del equipo:** comenzar en el plan **gratuito** y pasar a pagado antes de invitar testers de Google Play.
+**Consecuencias técnicas:** sin consola en el servidor → `ensure_admin` crea el administrador desde variables de entorno
+(idempotente, no sobrescribe la clave); el dominio se toma de `RENDER_EXTERNAL_HOSTNAME`; la clave secreta la genera
+Render (256 bits); base sin acceso público (`ipAllowList: []`); la app espera hasta 90 s el arranque del servidor.
+**Riesgos:** la base gratuita expira a los 30 días y no tiene respaldos (RNF-08 no se cumple en este plan) → mitigación:
+cambiar a plan pagado antes de la prueba cerrada; los datos de prueba deben poder recrearse desde el portal.
+**Alternativas descartadas:** servidor propio con túnel (no apto para Play), otra BD sin PostGIS (rompe HU-07).

@@ -11,12 +11,20 @@ from .base import ALLOWED_HOSTS, MIDDLEWARE, SECRET_KEY, env
 
 DEBUG = False
 
+CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
+
+# Render informa el dominio público asignado al servicio (p. ej. pettech-api.onrender.com):
+# se agrega automáticamente para no depender de configurarlo a mano.
+_render_host = env("RENDER_EXTERNAL_HOSTNAME", default="")
+if _render_host:
+    ALLOWED_HOSTS = [*ALLOWED_HOSTS, _render_host]
+    CSRF_TRUSTED_ORIGINS = [*CSRF_TRUSTED_ORIGINS, f"https://{_render_host}"]
+
 if not ALLOWED_HOSTS:
     raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS es obligatorio en producción.")
-if SECRET_KEY.startswith("dev-") or len(SECRET_KEY) < 50:
-    raise ImproperlyConfigured("DJANGO_SECRET_KEY de producción debe ser aleatoria y de al menos 50 caracteres.")
-
-CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
+# Clave aleatoria de al menos 256 bits: la que genera Render (generateValue) tiene 44 caracteres en base64.
+if SECRET_KEY.startswith("dev-") or len(SECRET_KEY) < 40:
+    raise ImproperlyConfigured("DJANGO_SECRET_KEY de producción debe ser aleatoria y de al menos 40 caracteres.")
 
 # HTTPS obligatorio (el proveedor termina TLS y reenvía X-Forwarded-Proto).
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
