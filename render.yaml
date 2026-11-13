@@ -21,7 +21,6 @@ services:
   - type: web
     name: pettech-api
     runtime: docker
-    rootDir: backend-api
     dockerfilePath: ./backend-api/Dockerfile   # relativo a la raíz del repositorio
     dockerContext: ./backend-api
     plan: free
