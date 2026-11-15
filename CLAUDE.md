@@ -16,8 +16,10 @@ Android nativo (Kotlin) → API REST Django + DRF + GeoDjango (monolito modular)
 - Portal web (`apps/portal`, Django Templates) SOLO para administrador, veterinarias y profesionales (DEC-025).
   El tutor usa exclusivamente la app Android.
 - Prohibido introducir: React, Flutter, Firebase/Firestore, otra BD, microservicios, IA, pagos, chatbots,
-  telemedicina, marketplace, iOS.
-- Maps SDK for Android (Maps Compose, clave opcional en `local.properties`) implementado; WorkManager solo cuando se implemente HU-06.
+  telemedicina, marketplace, iOS. Excepción documentada: OCR en el dispositivo (ML Kit, sin Firebase) solo para
+  proponer la transcripción del carnet, siempre con confirmación del tutor (DEC-032).
+- Mapa con OpenStreetMap (osmdroid, sin clave; DEC-030). Datos de Google Maps: no se copian (DEC-029).
+  WorkManager solo cuando se implemente HU-06.
 - La app móvil sigue el boceto del equipo (DEC-019): login → Mis mascotas → ficha de mascota → ficha clínica; Buscar veterinaria.
 
 ## Módulos del backend (`backend-api/apps/`)

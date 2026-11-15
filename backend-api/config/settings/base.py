@@ -203,6 +203,9 @@ PETTECH_CONTACT_EMAIL = env("PETTECH_CONTACT_EMAIL", default="contacto@pettech.t
 PORTAL_LOGIN_MAX_ATTEMPTS = env.int("PORTAL_LOGIN_MAX_ATTEMPTS", default=8)
 
 # Versión vigente de la política de privacidad que el tutor debe aceptar (HU-01).
+# Descarga del APK desde la página pública (p. ej. GitHub Releases). Vacío = "próximamente".
+PETTECH_APK_URL = env("PETTECH_APK_URL", default="")
+PETTECH_APK_VERSION = env("PETTECH_APK_VERSION", default="0.4.0")
 PETTECH_PRIVACY_POLICY_VERSION = env("PRIVACY_POLICY_VERSION", default="2026-11-borrador")
 
 # Documentación OpenAPI (RNF-07).

@@ -1,14 +1,88 @@
 {% load portal_extras %}
-<div class="field"><label for="f_type">Tipo de antecedente</label>
-<select id="f_type" name="entry_type" {% if lock_type %}disabled{% endif %}>{% for t in types %}<option value="{{ t.value }}" {% if t.value == v_type %}selected{% endif %}>{{ t.label }}</option>{% endfor %}</select>
-{% if lock_type %}<input type="hidden" name="entry_type" value="{{ v_type }}">{% endif %}
-<div class="err">{{ errors|get_item:"entry_type" }}</div></div>
-<div class="field"><label for="f_title">Descripción</label><input id="f_title" type="text" name="title" value="{{ v_title }}" placeholder="Vacuna, motivo, alergia, fármaco y dosis…" maxlength="120"><div class="err">{{ errors|get_item:"title" }}</div></div>
+{# Formulario estandarizado de la ficha clínica (formato SOAP + signos vitales + producto aplicado). #}
+{# Cada bloque declara en data-types los tipos a los que aplica; el script muestra solo lo pertinente. #}
 <div class="grid g2">
-<div class="field"><label for="f_date">Fecha</label><input id="f_date" type="date" name="occurred_on" value="{{ v_date }}"><div class="err">{{ errors|get_item:"occurred_on" }}</div></div>
-<div class="field"><label for="f_next">Próxima fecha (opcional)</label><input id="f_next" type="date" name="next_due_on" value="{{ v_next }}"><div class="help">Refuerzo, próximo control o fin del tratamiento.</div><div class="err">{{ errors|get_item:"next_due_on" }}</div></div>
-<div class="field"><label for="f_w">Peso en kg (opcional)</label><input id="f_w" type="number" step="0.01" min="0.05" max="150" name="weight_kg" value="{{ v_weight }}"><div class="err">{{ errors|get_item:"weight_kg" }}</div></div>
-<div class="field"><label for="f_lot">Lote / serie (vacunas)</label><input id="f_lot" type="text" name="lot_number" value="{{ v_lot }}" maxlength="40"></div>
+  <div class="field"><label for="f_type">Tipo de registro</label>
+    <select id="f_type" name="entry_type" {% if lock_type %}disabled{% endif %}>{% for t in types %}<option value="{{ t.value }}" {% if t.value == v.entry_type %}selected{% endif %}>{{ t.label }}</option>{% endfor %}</select>
+    {% if lock_type %}<input type="hidden" name="entry_type" value="{{ v.entry_type }}">{% endif %}
+    <div class="err">{{ errors|get_item:"entry_type" }}</div></div>
+  <div class="field"><label for="f_date">Fecha de atención</label><input id="f_date" type="date" name="occurred_on" value="{{ v.occurred_on }}" required><div class="err">{{ errors|get_item:"occurred_on" }}</div></div>
 </div>
-<div class="field inline"><input id="f_act" type="checkbox" name="is_active" {% if v_active %}checked{% endif %}><label for="f_act">Vigente (alergias, patologías y fármacos)</label></div>
-<div class="field"><label for="f_notes">Observaciones, procedimiento o tratamiento</label><textarea id="f_notes" name="notes" rows="3" maxlength="2000">{{ v_notes }}</textarea></div>
+<div class="field"><label for="f_title" id="l_title">Motivo de consulta</label><input id="f_title" type="text" name="title" value="{{ v.title }}" maxlength="120" required><div class="err">{{ errors|get_item:"title" }}</div></div>
+
+<fieldset class="fs" data-types="VISIT SURGERY"><legend><span class="soap">S</span>Subjetivo · anamnesis</legend>
+  <div class="field"><label for="f_anam">Anamnesis</label><textarea id="f_anam" name="anamnesis" rows="3" maxlength="2000" placeholder="Motivo, evolución, alimentación, conducta, síntomas referidos por el tutor…">{{ v.anamnesis }}</textarea><div class="err">{{ errors|get_item:"anamnesis" }}</div></div>
+</fieldset>
+
+<fieldset class="fs" data-types="VISIT SURGERY WEIGHT"><legend><span class="soap">O</span>Objetivo · examen físico</legend>
+  <div class="grid g4">
+    <div class="field"><label for="f_w">Peso (kg)</label><input id="f_w" type="number" step="0.01" min="0.05" max="150" name="weight_kg" value="{{ v.weight_kg }}"><div class="err">{{ errors|get_item:"weight_kg" }}</div></div>
+    <div class="field" data-types="VISIT SURGERY"><label for="f_temp">Temperatura (°C)</label><input id="f_temp" type="number" step="0.1" min="30" max="45" name="temperature_c" value="{{ v.temperature_c }}"><div class="err">{{ errors|get_item:"temperature_c" }}</div></div>
+    <div class="field" data-types="VISIT SURGERY"><label for="f_fc">Frec. cardíaca (lpm)</label><input id="f_fc" type="number" min="20" max="400" name="heart_rate_bpm" value="{{ v.heart_rate_bpm }}"><div class="err">{{ errors|get_item:"heart_rate_bpm" }}</div></div>
+    <div class="field" data-types="VISIT SURGERY"><label for="f_fr">Frec. respiratoria (rpm)</label><input id="f_fr" type="number" min="4" max="200" name="respiratory_rate_rpm" value="{{ v.respiratory_rate_rpm }}"><div class="err">{{ errors|get_item:"respiratory_rate_rpm" }}</div></div>
+  </div>
+  <div class="grid g2">
+    <div class="field" data-types="VISIT WEIGHT"><label for="f_bcs">Condición corporal (1-9)</label>
+      <select id="f_bcs" name="body_condition_score"><option value="">—</option>{% for n in bcs_range %}<option value="{{ n }}" {% if v.body_condition_score|stringformat:"s" == n|stringformat:"s" %}selected{% endif %}>{{ n }}{% if n == 1 %} · caquexia{% elif n == 5 %} · ideal{% elif n == 9 %} · obesidad{% endif %}</option>{% endfor %}</select>
+      <div class="help">Escala de 9 puntos (5 = ideal).</div><div class="err">{{ errors|get_item:"body_condition_score" }}</div></div>
+    <div class="field" data-types="VISIT"><label for="f_muc">Mucosas</label>
+      <select id="f_muc" name="mucous_membranes"><option value="">—</option>{% for c in mucous_choices %}<option value="{{ c.0 }}" {% if c.0 == v.mucous_membranes %}selected{% endif %}>{{ c.1 }}</option>{% endfor %}</select></div>
+  </div>
+  <div class="field" data-types="VISIT SURGERY"><label for="f_exam">Hallazgos del examen físico</label><textarea id="f_exam" name="physical_exam" rows="3" maxlength="2000" placeholder="Hidratación, linfonodos, auscultación, palpación abdominal, piel, ojos, oídos…">{{ v.physical_exam }}</textarea></div>
+</fieldset>
+
+<fieldset class="fs" data-types="VISIT SURGERY CHRONIC_CONDITION"><legend><span class="soap">A</span>Análisis · diagnóstico</legend>
+  <div class="field"><label for="f_dx">Diagnóstico o impresión diagnóstica</label><textarea id="f_dx" name="diagnosis" rows="2" maxlength="1000">{{ v.diagnosis }}</textarea><div class="err">{{ errors|get_item:"diagnosis" }}</div></div>
+</fieldset>
+
+<fieldset class="fs" data-types="VISIT SURGERY CHRONIC_CONDITION"><legend><span class="soap">P</span>Plan · tratamiento</legend>
+  <div class="field"><label for="f_tx">Tratamiento, indicaciones y exámenes solicitados</label><textarea id="f_tx" name="treatment" rows="3" maxlength="2000">{{ v.treatment }}</textarea></div>
+</fieldset>
+
+<fieldset class="fs" data-types="VACCINE DEWORMING MEDICATION"><legend>💉 Producto aplicado o indicado</legend>
+  <div class="grid g2">
+    <div class="field"><label for="f_lab">Laboratorio</label><input id="f_lab" type="text" name="manufacturer" value="{{ v.manufacturer }}" maxlength="80"><div class="err">{{ errors|get_item:"manufacturer" }}</div></div>
+    <div class="field"><label for="f_route">Vía de administración</label>
+      <select id="f_route" name="route"><option value="">—</option>{% for c in route_choices %}<option value="{{ c.0 }}" {% if c.0 == v.route %}selected{% endif %}>{{ c.1 }}</option>{% endfor %}</select></div>
+    <div class="field" data-types="VACCINE"><label for="f_lot">Lote / serie</label><input id="f_lot" type="text" name="lot_number" value="{{ v.lot_number }}" maxlength="40"><div class="help">Tal como aparece en la etiqueta del frasco.</div><div class="err">{{ errors|get_item:"lot_number" }}</div></div>
+    <div class="field" data-types="VACCINE"><label for="f_exp">Vencimiento del lote</label><input id="f_exp" type="date" name="lot_expires_on" value="{{ v.lot_expires_on }}"><div class="err">{{ errors|get_item:"lot_expires_on" }}</div></div>
+    {% if with_photo %}<div class="field" data-types="VACCINE DEWORMING"><label for="f_photo">📷 Foto de la etiqueta (opcional)</label><input id="f_photo" type="file" name="label_photo" accept="image/jpeg,image/png,image/webp" capture="environment"><div class="help">Respaldo del lote y vencimiento. Se guarda sin metadatos de ubicación. Máx. 8 MB.</div><div class="err">{{ errors|get_item:"label_photo" }}</div></div>{% endif %}
+    <div class="field" data-types="DEWORMING MEDICATION"><label for="f_dose">Dosis y frecuencia</label><input id="f_dose" type="text" name="dose" value="{{ v.dose }}" maxlength="120" placeholder="Ej.: 1 comprimido cada 12 h por 7 días"><div class="err">{{ errors|get_item:"dose" }}</div></div>
+  </div>
+</fieldset>
+
+<div class="grid g2">
+  <div class="field" data-types="VACCINE DEWORMING VISIT MEDICATION"><label for="f_next" id="l_next">Próxima fecha</label><input id="f_next" type="date" name="next_due_on" value="{{ v.next_due_on }}"><div class="help">Refuerzo, próximo control o fin del tratamiento. El tutor la verá como recordatorio.</div><div class="err">{{ errors|get_item:"next_due_on" }}</div></div>
+  <div class="field inline" data-types="ALLERGY CHRONIC_CONDITION MEDICATION" style="align-self:center"><input id="f_act" type="checkbox" name="is_active" {% if v.is_active %}checked{% endif %}><label for="f_act">Vigente actualmente</label></div>
+</div>
+<div class="field"><label for="f_notes">Observaciones adicionales</label><textarea id="f_notes" name="notes" rows="2" maxlength="2000">{{ v.notes }}</textarea></div>
+
+<script>
+(function () {
+  const LABELS = {
+    VISIT: ['Motivo de consulta', 'Ej.: control anual, vómitos hace 2 días'],
+    VACCINE: ['Vacuna (nombre comercial)', 'Ej.: antirrábica, óctuple, triple felina'],
+    DEWORMING: ['Antiparasitario', 'Ej.: interno, externo o ambos'],
+    MEDICATION: ['Fármaco', 'Nombre y concentración'],
+    ALLERGY: ['Alergia', 'Ej.: penicilina, pollo, picadura de pulga'],
+    CHRONIC_CONDITION: ['Patología crónica', 'Ej.: enfermedad renal crónica, epilepsia'],
+    SURGERY: ['Cirugía o procedimiento', 'Ej.: esterilización (OVH), destartraje'],
+    WEIGHT: ['Control de peso', 'Ej.: control de peso mensual'],
+  };
+  const sel = document.getElementById('f_type'), form = sel.closest('form');
+  function apply() {
+    const t = sel.value, lab = LABELS[t] || ['Descripción', ''];
+    document.getElementById('l_title').textContent = lab[0];
+    document.getElementById('f_title').placeholder = lab[1];
+    form.querySelectorAll('[data-types]').forEach(function (el) {
+      const on = el.dataset.types.split(' ').indexOf(t) >= 0;
+      el.style.display = on ? '' : 'none';
+      el.querySelectorAll('input,select,textarea').forEach(function (i) {
+        // Un campo oculto por un bloque padre también debe quedar deshabilitado.
+        i.disabled = !on || (i.closest('[data-types]') !== el && i.closest('[data-types]').style.display === 'none');
+      });
+    });
+  }
+  sel.addEventListener('change', apply); apply();
+})();
+</script>

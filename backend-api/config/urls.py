@@ -2,7 +2,6 @@
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
-from django.views.generic import RedirectView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from apps.portal import views as portal_views
@@ -26,7 +25,7 @@ api_v1 = [
 ]
 
 urlpatterns = [
-    path("", RedirectView.as_view(pattern_name="portal:home", permanent=False)),
+    path("", portal_views.LandingView.as_view(), name="landing"),
     path("portal/", include("apps.portal.urls")),
     path("privacidad/", portal_views.privacy_policy, name="public-privacy"),
     path("eliminar-cuenta/", portal_views.account_deletion, name="public-account-deletion"),

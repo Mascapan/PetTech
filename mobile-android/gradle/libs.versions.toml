@@ -16,8 +16,9 @@ datastore = "1.1.1"
 junit = "4.13.2"
 # Fase 4: mapa (HU-10) y ubicación en primer plano (HU-07)
 playServicesLocation = "21.3.0"
-playServicesMaps = "19.0.0"
-mapsCompose = "6.2.1"
+osmdroid = "6.1.20"
+# OCR en el dispositivo (modelo latino incluido en la app; sin Firebase ni envío de la foto a terceros, DEC-032)
+mlkitTextRecognition = "16.0.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -43,8 +44,8 @@ okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhtt
 okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
-play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
-maps-compose = { group = "com.google.maps.android", name = "maps-compose", version.ref = "mapsCompose" }
+mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkitTextRecognition" }
+osmdroid-android = { group = "org.osmdroid", name = "osmdroid-android", version.ref = "osmdroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

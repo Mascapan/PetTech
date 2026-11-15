@@ -1,0 +1,18 @@
+{% extends "portal/base.html" %}{% block title %}Afiliar {{ clinic.name }}{% endblock %}
+{% block content %}
+<div class="top"><div><h1>Afiliar a la Red PetTech</h1>
+<p class="sub">{{ clinic.name }} · {{ clinic.address }}, {{ clinic.commune }}</p></div>
+<a class="btn ghost" href="{% url 'portal:admin-clinic' clinic.pk %}">← Volver</a></div>
+<div class="grid g2">
+<div class="card"><h2>Cuenta de la veterinaria</h2>
+<form method="post" novalidate>{% csrf_token %}
+{% for e in form.non_field_errors %}<div class="msg error">{{ e }}</div>{% endfor %}
+{% for f in form %}{% include "portal/_field.html" with field=f %}{% endfor %}
+<button class="btn">Afiliar y crear cuenta</button></form></div>
+<div class="card"><h2>¿Qué cambia?</h2><ul>
+<li>La app muestra a la veterinaria con el distintivo <span class="tag t-green">✔ Red PetTech</span>.</li>
+<li>Su responsable ingresa al portal, confirma sus datos y horario, y autoriza a sus profesionales.</li>
+<li>Sus profesionales pueden solicitar acceso a fichas clínicas con el código PetTech (siempre con permiso del tutor).</li>
+<li>Hasta que confirme sus datos, la información sigue rotulada como fuente pública no confirmada.</li>
+</ul></div></div>
+{% endblock %}

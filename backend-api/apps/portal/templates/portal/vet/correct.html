@@ -3,11 +3,7 @@
 <div class="top"><div><h1>Corregir registro</h1><p class="sub">{{ pet.name }} · <span class="code">{{ pet.public_code }}</span>. La corrección crea una versión nueva; la anterior se conserva con autor, fecha y motivo.</p></div>
 <a class="btn ghost" href="{% url 'portal:vet-record' pet.public_code %}">← Volver a la ficha</a></div>
 <div class="card" style="max-width:760px"><form method="post" novalidate>{% csrf_token %}
-{% if values %}
-{% include "portal/vet/_entry_fields.html" with lock_type=True v_type=entry.entry_type v_title=values.title v_date=values.occurred_on v_next=values.next_due_on v_weight=values.weight_kg v_lot=values.lot_number v_notes=values.notes v_active=values.is_active %}
-{% else %}
-{% include "portal/vet/_entry_fields.html" with lock_type=True v_type=entry.entry_type v_title=entry.title v_date=entry.occurred_on|date:"Y-m-d" v_next=entry.next_due_on|date:"Y-m-d" v_weight=entry.weight_kg|unlocalize v_lot=entry.lot_number v_notes=entry.notes v_active=entry.is_active %}
-{% endif %}
+{% include "portal/vet/_entry_fields.html" with lock_type=True v=values %}
 <div class="field"><label for="f_reason">Motivo de la corrección</label><input id="f_reason" type="text" name="reason" value="{{ values.reason }}" maxlength="200" required><div class="err">{{ errors|get_item:"reason" }}</div></div>
 <button class="btn">Guardar corrección</button></form></div>
 {% endblock %}

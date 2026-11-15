@@ -10,7 +10,7 @@ import logging
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.core.cache import cache
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -22,20 +22,31 @@ from apps.access_control import services as access
 from apps.access_control.models import AccessRequest, AuditEvent
 from apps.accounts.models import User, UserManager
 from apps.clinical_records import services as records
-from apps.clinical_records.models import ClinicalEntry, EntryType, Origin
+from apps.clinical_records.models import ClinicalEntry, EntryType, MucousMembranes, Origin, Route
+from apps.clinical_records.serializers import STRUCTURED_FIELDS
 from apps.clinical_records.serializers import ClinicalEntrySerializer, CorrectionSerializer, build_record_payload
 from apps.clinics.models import Clinic, Service
 
 from . import analytics, services
 from .forms import (
     AccessRequestForm,
+    AffiliateClinicForm,
+    DirectoryClinicForm,
+    DirectoryImportForm,
     ClinicCreateForm,
     ClinicProfileForm,
     LoginForm,
+    PortalPasswordChangeForm,
     ProfessionalCreateForm,
     hours_forms,
 )
-from .mixins import PORTAL_ROLES, AdminRequiredMixin, ClinicRequiredMixin, ProfessionalRequiredMixin
+from .mixins import (
+    PORTAL_ROLES,
+    AdminRequiredMixin,
+    ClinicRequiredMixin,
+    PortalUserRequiredMixin,
+    ProfessionalRequiredMixin,
+)
 
 logger = logging.getLogger("pettech.portal")
 
@@ -102,6 +113,38 @@ class LogoutView(View):
         return redirect("portal:login")
 
 
+class PasswordChangeView(PortalUserRequiredMixin, View):
+    """Cualquier usuario del portal cambia su contraseña; se cierran sus sesiones en la app."""
+
+    template = "portal/password_change.html"
+
+    def get(self, request):
+        return render(request, self.template, {"form": PortalPasswordChangeForm(request.user), "section": "password"})
+
+    def post(self, request):
+        form = PortalPasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            services.change_password(request.user, form.cleaned_data["new_password"])
+            update_session_auth_hash(request, request.user)  # mantiene esta sesión, invalida las demás
+            logger.info("Cambio de contraseña user_id=%s", request.user.pk)
+            messages.success(request, "Contraseña actualizada. Las demás sesiones abiertas se cerraron.")
+            return redirect("portal:home")
+        return render(request, self.template, {"form": form, "section": "password"})
+
+
+class LandingView(View):
+    """Página pública de presentación: descarga de la app para tutores e ingreso para veterinarias."""
+
+    def get(self, request):
+        return render(request, "portal/public/landing.html", {
+            "apk_url": settings.PETTECH_APK_URL,
+            "apk_version": settings.PETTECH_APK_VERSION,
+            "contact_email": settings.PETTECH_CONTACT_EMAIL,
+            "network_count": Clinic.objects.filter(is_active=True, accepts_pettech_records=True,
+                                                   account__isnull=False).count(),
+        })
+
+
 class HomeView(View):
     def get(self, request):
         if not request.user.is_authenticated:
@@ -121,10 +164,84 @@ class AdminDashboardView(AdminRequiredMixin, View):
 
 
 class AdminClinicListView(AdminRequiredMixin, View):
+    FILTERS = {"red": "Red PetTech", "directorio": "Directorio (no afiliadas)", "todas": "Todas"}
+
     def get(self, request):
+        current = request.GET.get("ver", "todas")
         clinics = Clinic.objects.select_related("account").order_by("name")
+        if current == "red":
+            clinics = clinics.filter(account__isnull=False, accepts_pettech_records=True)
+        elif current == "directorio":
+            clinics = clinics.exclude(account__isnull=False, accepts_pettech_records=True)
         rows = [{"clinic": c, "professionals": c.memberships.filter(is_verified=True).count()} for c in clinics]
-        return render(request, "portal/admin/clinics.html", {"rows": rows, "section": "clinics"})
+        return render(request, "portal/admin/clinics.html", {"rows": rows, "section": "clinics",
+                                                             "filters": self.FILTERS, "current": current})
+
+
+class AdminDirectoryCreateView(AdminRequiredMixin, View):
+    template = "portal/admin/directory_form.html"
+
+    def get(self, request):
+        return render(request, self.template, {"form": DirectoryClinicForm(), "import_form": DirectoryImportForm(),
+                                               "section": "clinics"})
+
+    def post(self, request):
+        form = DirectoryClinicForm(request.POST)
+        if form.is_valid():
+            clinic = services.create_directory_clinic(request.user, form.cleaned_data)
+            messages.success(request, f"«{clinic.name}» agregada al directorio (no afiliada).")
+            return redirect("portal:admin-clinic", pk=clinic.pk)
+        return render(request, self.template, {"form": form, "import_form": DirectoryImportForm(),
+                                               "section": "clinics"})
+
+
+class AdminDirectoryImportView(AdminRequiredMixin, View):
+    """Importa el directorio desde un JSON de OpenStreetMap (Overpass), sin necesitar consola en el servidor."""
+
+    def post(self, request):
+        import json
+
+        from apps.clinics.directory import import_osm
+
+        form = DirectoryImportForm(request.POST, request.FILES)
+        if not form.is_valid():
+            messages.error(request, " ".join(e for errs in form.errors.values() for e in errs))
+            return redirect("portal:admin-directory-new")
+        try:
+            payload = json.load(form.cleaned_data["file"])
+            elements = payload["elements"]
+            if not isinstance(elements, list):
+                raise TypeError
+        except (ValueError, KeyError, TypeError):
+            messages.error(request, "El archivo no tiene el formato JSON de Overpass (falta 'elements').")
+            return redirect("portal:admin-directory-new")
+        stats = import_osm(elements, default_commune=form.cleaned_data["commune"])
+        access.audit(request.user, AuditEvent.Action.DIRECTORY_UPDATED, resource_id="osm-import")
+        messages.success(request, f"Directorio actualizado desde OpenStreetMap: {stats['created']} nuevas, "
+                                  f"{stats['updated']} actualizadas, {stats['skipped']} omitidas.")
+        return redirect(f"{reverse('portal:admin-clinics')}?ver=directorio")
+
+
+class AdminClinicAffiliateView(AdminRequiredMixin, View):
+    template = "portal/admin/affiliate_form.html"
+
+    def get(self, request, pk):
+        clinic = get_object_or_404(Clinic, pk=pk)
+        return render(request, self.template, {"clinic": clinic, "form": AffiliateClinicForm(), "section": "clinics"})
+
+    def post(self, request, pk):
+        clinic = get_object_or_404(Clinic, pk=pk)
+        form = AffiliateClinicForm(request.POST)
+        if form.is_valid():
+            try:
+                services.affiliate_clinic(request.user, clinic, form.cleaned_data)
+            except services.PortalError as exc:
+                form.add_error(None, str(exc))
+            else:
+                messages.success(request, f"«{clinic.name}» ya es parte de la Red PetTech. Entrega a su responsable "
+                                          "el correo y la contraseña inicial por un canal seguro.")
+                return redirect("portal:admin-clinic", pk=clinic.pk)
+        return render(request, self.template, {"clinic": clinic, "form": form, "section": "clinics"})
 
 
 class AdminClinicCreateView(AdminRequiredMixin, View):
@@ -191,6 +308,19 @@ class ClinicDashboardView(ClinicRequiredMixin, View):
         })
 
 
+class ClinicMetricsView(ClinicRequiredMixin, View):
+    """Indicadores de atención del establecimiento (cifras agregadas, sin fichas individuales)."""
+
+    def get(self, request):
+        try:
+            days = int(request.GET.get("dias", 90))
+        except ValueError:
+            days = 90
+        return render(request, "portal/clinic/metrics.html", {
+            "clinic": self.clinic, "m": analytics.clinic_attention_metrics(self.clinic, days), "section": "metrics",
+        })
+
+
 class ClinicProfessionalCreateView(ClinicRequiredMixin, View):
     template = "portal/clinic/professional_form.html"
 
@@ -232,8 +362,13 @@ class ClinicProfileView(ClinicRequiredMixin, View):
 
     def get(self, request):
         c = self.clinic
-        form = ClinicProfileForm(initial={"phone": c.phone, "attends_emergencies": c.attends_emergencies,
-                                          "emergency_24h": c.emergency_24h, "services": c.services})
+        form = ClinicProfileForm(initial={
+            "name": c.name, "address": c.address, "commune": c.commune,
+            "latitude": c.location.y, "longitude": c.location.x,
+            "phone": c.phone, "contact_email": c.contact_email, "website": c.website,
+            "attends_emergencies": c.attends_emergencies, "emergency_24h": c.emergency_24h,
+            "services": c.services, "services_detail": c.services_detail,
+        })
         return render(request, self.template, self._ctx(form, hours_forms(clinic=c)))
 
     def post(self, request):
@@ -291,8 +426,38 @@ class VetHomeView(ProfessionalRequiredMixin, View):
         return render(request, self.template, self._ctx(request, form))
 
 
+# Ficha estandarizada: mínimos exigidos al profesional según el tipo de registro.
+PROFESSIONAL_REQUIRED = {
+    EntryType.VACCINE: {"manufacturer": "Indica el laboratorio.", "lot_number": "Indica el lote o serie."},
+    EntryType.VISIT: {"anamnesis": "Describe la anamnesis (motivo y antecedentes).",
+                      "diagnosis": "Indica el diagnóstico o la impresión diagnóstica."},
+    EntryType.MEDICATION: {"dose": "Indica la dosis y la frecuencia."},
+    EntryType.SURGERY: {"diagnosis": "Indica el diagnóstico que motivó la cirugía."},
+}
+
+
+def required_professional_fields(data: dict) -> dict:
+    rules = PROFESSIONAL_REQUIRED.get(data.get("entry_type"), {})
+    return {field: msg for field, msg in rules.items() if not data.get(field)}
+
+
 def _entry_types():
     return [{"value": t.value, "label": t.label} for t in EntryType]
+
+
+def _form_choices() -> dict:
+    return {"types": _entry_types(), "bcs_range": range(1, 10), "mucous_choices": MucousMembranes.choices,
+            "route_choices": Route.choices}
+
+
+def _entry_values(entry: ClinicalEntry) -> dict:
+    """Valores de un registro existente en formato de formulario (para corregirlo)."""
+    values = {"entry_type": entry.entry_type, "title": entry.title, "notes": entry.notes,
+              "lot_number": entry.lot_number, "is_active": entry.is_active}
+    for name in ["occurred_on", "next_due_on", "weight_kg", *STRUCTURED_FIELDS]:
+        value = getattr(entry, name)
+        values[name] = "" if value is None else (value.isoformat() if hasattr(value, "isoformat") else str(value))
+    return values
 
 
 class VetRecordView(ProfessionalRequiredMixin, View):
@@ -308,13 +473,17 @@ class VetRecordView(ProfessionalRequiredMixin, View):
         type_filter = request.GET.get("type") if request.GET.get("type") in EntryType.values else None
         entries = records.current_entries(pet, type_filter)
         payload = build_record_payload(pet, entries, include_pet_id=False)
+        photos = records.attachments_by_entry(pet)
+        for e in entries:
+            e.photos = photos.get(e.pk, [])
         grant = (AccessRequest.objects.filter(pet=pet, clinic=membership.clinic, status="APPROVED")
                  .order_by("-decided_at").first())
         return render(request, self.template, {
             "pet": payload["pet"], "summary": payload["summary"], "entries": entries,
-            "membership": membership, "grant": grant, "types": _entry_types(), "type_filter": type_filter,
-            "errors": form_errors or {}, "values": form_values or {}, "section": "vet",
-            "today": timezone.localdate().isoformat(),
+            "membership": membership, "grant": grant, "type_filter": type_filter, **_form_choices(),
+            "errors": form_errors or {}, "section": "vet",
+            "values": form_values or {"entry_type": EntryType.VISIT, "occurred_on": timezone.localdate().isoformat(),
+                                      "is_active": True},
         }, status=status)
 
     def get(self, request, code):
@@ -338,8 +507,21 @@ class VetRecordView(ProfessionalRequiredMixin, View):
         if not serializer.is_valid():
             errors = {k: " ".join(str(x) for x in v) for k, v in serializer.errors.items()}
             return self._render(request, pet, membership, errors, request.POST, status=400)
-        records.create_by_professional(request.user, membership, pet, serializer.validated_data)
-        messages.success(request, "Registro guardado. El tutor ya puede verlo en su app.")
+        errors = required_professional_fields(serializer.validated_data)
+        if errors:
+            return self._render(request, pet, membership, errors, request.POST, status=400)
+        photo = request.FILES.get("label_photo")
+        if photo is not None:
+            try:
+                records.images.normalize(photo)  # se valida ANTES de guardar el registro
+            except records.images.InvalidImage as exc:
+                return self._render(request, pet, membership, {"label_photo": str(exc)}, request.POST, status=400)
+            photo.seek(0)
+        entry = records.create_by_professional(request.user, membership, pet, serializer.validated_data)
+        if photo is not None:
+            records.add_attachment(request.user, pet, photo, "VACCINE_LABEL", entry_id=entry.pk, membership=membership)
+        messages.success(request, "Registro guardado" + (" con su fotografía" if photo else "") +
+                         ". El tutor ya puede verlo en su app.")
         return redirect(reverse("portal:vet-record", kwargs={"code": pet.public_code}))
 
 
@@ -354,8 +536,8 @@ class VetCorrectView(ProfessionalRequiredMixin, View):
             return redirect("portal:vet-home")
         entry = get_object_or_404(ClinicalEntry, pk=entry_id, pet=pet, origin=Origin.PROFESSIONAL,
                                   clinic=membership.clinic)
-        return render(request, self.template, {"pet": pet, "entry": entry, "types": _entry_types(),
-                                               "errors": {}, "section": "vet"})
+        return render(request, self.template, {"pet": pet, "entry": entry, **_form_choices(),
+                                               "values": _entry_values(entry), "errors": {}, "section": "vet"})
 
     def post(self, request, code, entry_id):
         try:
@@ -366,21 +548,46 @@ class VetCorrectView(ProfessionalRequiredMixin, View):
         entry = get_object_or_404(ClinicalEntry, pk=entry_id, pet=pet)
         data = {k: v for k, v in request.POST.items() if k != "csrfmiddlewaretoken" and v != ""}
         data["is_active"] = request.POST.get("is_active") == "on"
+        data["entry_type"] = entry.entry_type
         serializer = CorrectionSerializer(data=data)
         if serializer.is_valid():
-            values = dict(serializer.validated_data)
-            reason = values.pop("reason")
-            try:
-                records.correct(request.user, pet, entry.pk, values, reason, membership=membership)
-            except APIException as exc:
-                messages.error(request, _api_error_message(exc))
-            else:
-                messages.success(request, "Corrección guardada. La versión anterior se conserva.")
-            return redirect("portal:vet-record", code=pet.public_code)
-        errors = {k: " ".join(str(x) for x in v) for k, v in serializer.errors.items()}
-        return render(request, self.template, {"pet": pet, "entry": entry, "types": _entry_types(),
-                                               "errors": errors, "values": request.POST, "section": "vet"},
+            errors = required_professional_fields(serializer.validated_data)
+            if not errors:
+                values = dict(serializer.validated_data)
+                reason = values.pop("reason")
+                try:
+                    records.correct(request.user, pet, entry.pk, values, reason, membership=membership)
+                except APIException as exc:
+                    messages.error(request, _api_error_message(exc))
+                else:
+                    messages.success(request, "Corrección guardada. La versión anterior se conserva.")
+                return redirect("portal:vet-record", code=pet.public_code)
+        else:
+            errors = {k: " ".join(str(x) for x in v) for k, v in serializer.errors.items()}
+        values = request.POST.copy()
+        values["entry_type"] = entry.entry_type
+        return render(request, self.template, {"pet": pet, "entry": entry, **_form_choices(),
+                                               "errors": errors, "values": values, "section": "vet"},
                       status=400)
+
+
+class VetAttachmentView(ProfessionalRequiredMixin, View):
+    """Muestra una foto de la ficha al profesional con autorización vigente (queda en la bitácora)."""
+
+    def get(self, request, code, attachment_id):
+        from django.http import Http404
+
+        from apps.clinical_records.models import Attachment
+        from apps.clinical_records.views import image_response
+
+        try:
+            pet, membership = access.require_active_grant(request.user, code, AuditEvent.Action.ATTACHMENT_READ)
+        except APIException:
+            raise Http404
+        att = get_object_or_404(Attachment, pk=attachment_id, pet=pet)
+        access.audit(request.user, AuditEvent.Action.ATTACHMENT_READ, pet=pet, clinic=membership.clinic,
+                     resource_id=att.pk)
+        return image_response(att)
 
 
 SERVICE_LABELS = dict(Service.choices)

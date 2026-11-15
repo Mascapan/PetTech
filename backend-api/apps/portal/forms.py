@@ -82,13 +82,39 @@ class ProfessionalCreateForm(forms.Form):
 
 
 class ClinicProfileForm(forms.Form):
-    """Información que la propia veterinaria mantiene al día."""
+    """Información que la propia veterinaria mantiene al día (datos, ubicación, contacto y servicios)."""
 
+    name = forms.CharField(label="Nombre del establecimiento", max_length=120)
+    address = forms.CharField(label="Dirección", max_length=200)
+    commune = forms.CharField(label="Comuna", max_length=60)
+    latitude = forms.FloatField(label="Latitud", min_value=-90, max_value=90,
+                                widget=forms.NumberInput(attrs={"step": "any"}))
+    longitude = forms.FloatField(label="Longitud", min_value=-180, max_value=180,
+                                 widget=forms.NumberInput(attrs={"step": "any"}))
     phone = forms.CharField(label="Teléfono", max_length=20, required=False)
+    contact_email = forms.EmailField(label="Correo de contacto (público)", required=False)
+    website = forms.URLField(label="Sitio web o red social", required=False, max_length=200,
+                             widget=forms.URLInput(attrs={"placeholder": "https://"}), assume_scheme="https")
     attends_emergencies = forms.BooleanField(label="Atendemos urgencias", required=False)
     emergency_24h = forms.BooleanField(label="Atención 24 horas", required=False)
     services = forms.MultipleChoiceField(label="Servicios", choices=Service.choices, required=False,
                                          widget=forms.CheckboxSelectMultiple)
+    services_detail = forms.CharField(
+        label="Otros servicios (detalle)", required=False, max_length=1500,
+        widget=forms.Textarea(attrs={"rows": 5, "placeholder": "Ej.: dermatología, ecografía abdominal, "
+                                                               "certificados de viaje (SAG), peluquería clínica…"}),
+        help_text="Describe en texto libre todos los servicios que ofrecen. Máximo 1.500 caracteres.")
+
+    def clean_services_detail(self):
+        return "\n".join(line.rstrip() for line in self.cleaned_data["services_detail"].strip().splitlines())
+
+    def clean(self):
+        data = super().clean()
+        lat, lng = data.get("latitude"), data.get("longitude")
+        # Validación gruesa: la cobertura del piloto es Chile continental.
+        if lat is not None and lng is not None and not (-56 <= lat <= -17 and -76 <= lng <= -66):
+            raise ValidationError("La ubicación no parece estar en Chile. Revisa latitud y longitud.")
+        return data
 
 
 class DayHoursForm(forms.Form):
@@ -134,3 +160,94 @@ class AccessRequestForm(forms.Form):
                                                                 "style": "text-transform:uppercase"}))
     reason = forms.CharField(label="Motivo (opcional)", max_length=200, required=False,
                              widget=forms.TextInput(attrs={"placeholder": "Ej.: control anual, urgencia"}))
+
+
+class PortalPasswordChangeForm(forms.Form):
+    """Cambio de contraseña para cualquier rol del portal (exige la contraseña actual)."""
+
+    old_password = forms.CharField(label="Contraseña actual", strip=False,
+                                   widget=forms.PasswordInput(attrs={"autocomplete": "current-password"}))
+    new_password = forms.CharField(label="Nueva contraseña", strip=False,
+                                   widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
+                                   help_text="Mínimo 10 caracteres; evita datos personales o contraseñas comunes.")
+    new_password2 = forms.CharField(label="Repite la nueva contraseña", strip=False,
+                                    widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}))
+
+    def __init__(self, user, *args, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+    def clean_old_password(self):
+        value = self.cleaned_data["old_password"]
+        if not self.user.check_password(value):
+            raise ValidationError("La contraseña actual no es correcta.")
+        return value
+
+    def clean(self):
+        data = super().clean()
+        new = data.get("new_password")
+        if new:
+            try:
+                password_validation.validate_password(new, user=self.user)
+            except ValidationError as exc:
+                self.add_error("new_password", exc)
+            if data.get("old_password") and new == data["old_password"]:
+                self.add_error("new_password", "La nueva contraseña debe ser distinta de la actual.")
+            if new != data.get("new_password2"):
+                self.add_error("new_password2", "Las contraseñas no coinciden.")
+        return data
+
+
+class DirectoryClinicForm(forms.Form):
+    """Alta manual de una veterinaria NO afiliada al directorio, con su fuente pública (DEC-029)."""
+
+    name = forms.CharField(label="Nombre del establecimiento", max_length=120)
+    address = forms.CharField(label="Dirección", max_length=200)
+    commune = forms.CharField(label="Comuna", max_length=60, initial="Chillán")
+    phone = forms.CharField(label="Teléfono", max_length=20, required=False)
+    website = forms.URLField(label="Sitio web o red social", required=False, max_length=200, assume_scheme="https")
+    latitude = forms.FloatField(label="Latitud", min_value=-90, max_value=90)
+    longitude = forms.FloatField(label="Longitud", min_value=-180, max_value=180)
+    attends_emergencies = forms.BooleanField(label="Declara públicamente atender urgencias", required=False)
+    services = forms.MultipleChoiceField(label="Servicios publicados", choices=Service.choices, required=False,
+                                         widget=forms.CheckboxSelectMultiple)
+    source_note = forms.CharField(
+        label="Fuente de la información", max_length=200,
+        help_text="Dónde se verificó el dato. Ej.: sitio web oficial de la clínica (consultado el 15-11-2026). "
+                  "No copiar información de Google Maps: sus términos lo prohíben.")
+
+    def clean_source_note(self):
+        value = self.cleaned_data["source_note"].strip()
+        if "google" in value.lower():
+            raise ValidationError("Los términos de Google Maps no permiten copiar su información. "
+                                  "Usa el sitio o red social del establecimiento, u OpenStreetMap.")
+        return value
+
+
+class DirectoryImportForm(forms.Form):
+    file = forms.FileField(label="Archivo JSON exportado de Overpass (OpenStreetMap)",
+                           help_text="Máximo 2 MB. Ver instrucciones en docs/DIRECTORIO_VETERINARIAS.md.")
+    commune = forms.CharField(label="Comuna por defecto", max_length=60, initial="Chillán")
+
+    def clean_file(self):
+        f = self.cleaned_data["file"]
+        if f.size > 2 * 1024 * 1024:
+            raise ValidationError("El archivo supera 2 MB.")
+        return f
+
+
+class AffiliateClinicForm(forms.Form):
+    """Afilia a la Red PetTech una veterinaria del directorio, creando su cuenta de acceso al portal."""
+
+    account_name = forms.CharField(label="Nombre del responsable", max_length=150)
+    account_email = forms.EmailField(label="Correo de acceso de la veterinaria")
+    account_password = forms.CharField(label="Contraseña inicial", strip=False, widget=forms.PasswordInput,
+                                       help_text="Mínimo 10 caracteres. Entrégala por un canal seguro.")
+    account_password2 = forms.CharField(label="Repite la contraseña", strip=False, widget=forms.PasswordInput)
+
+    clean_account_email = ClinicCreateForm.clean_account_email
+
+    def clean(self):
+        super().clean()
+        _check_password(self, "account_password", "account_email", "account_name")
+        return self.cleaned_data

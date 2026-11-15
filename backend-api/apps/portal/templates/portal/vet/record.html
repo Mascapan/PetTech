@@ -4,7 +4,7 @@
 <p class="sub">{{ pet.species_label }}{% if pet.breed %} · {{ pet.breed }}{% endif %} · {{ pet.sex_label }}{% if pet.birth_date %} · nacimiento {{ pet.birth_date }}{% if pet.birth_date_is_estimated %} (aprox.){% endif %}{% endif %}</p></div>
 <a class="btn ghost" href="{% url 'portal:vet-home' %}">← Mis solicitudes</a></div>
 <div class="msg info">Acceso autorizado por el tutor para <strong>{{ membership.clinic.name }}</strong>{% if grant %} hasta {{ grant.expires_at|date:"d-m-Y H:i" }}{% endif %}. Esta consulta quedó registrada en la bitácora que ve el tutor.</div>
-<div class="grid g2">
+<div class="grid">
 <div class="card"><h2>Resumen clínico</h2><dl class="kv">
 <dt>Peso</dt><dd>{% if summary.latest_weight_kg %}{{ summary.latest_weight_kg }} kg ({{ summary.latest_weight_on }}){% else %}Sin registro{% endif %}</dd>
 <dt>Alergias</dt><dd>{% for a in summary.allergies %}<span class="tag t-red">{{ a }}</span>{% empty %}Ninguna registrada{% endfor %}</dd>
@@ -14,18 +14,11 @@
 </dl>
 {% if pet.general_notes %}<p class="muted">Antecedentes generales (declarados por el tutor): {{ pet.general_notes }}</p>{% endif %}</div>
 <div class="card"><h2>Registrar atención</h2>
-<form method="post" novalidate>{% csrf_token %}
-{% include "portal/vet/_entry_fields.html" with v_type=values.entry_type|default:"VISIT" v_title=values.title v_date=values.occurred_on|default:today v_next=values.next_due_on v_weight=values.weight_kg v_lot=values.lot_number v_notes=values.notes v_active=True %}
+<form method="post" novalidate enctype="multipart/form-data">{% csrf_token %}
+{% include "portal/vet/_entry_fields.html" with v=values with_photo=True %}
 <button class="btn">Guardar en la ficha</button></form></div>
 </div>
 <div class="card"><h2>Historial (todas las veterinarias de la red)</h2>
 <div class="chips"><a href="?" class="{% if not type_filter %}on{% endif %}">Todos</a>{% for t in types %}<a href="?type={{ t.value }}" class="{% if type_filter == t.value %}on{% endif %}">{{ t.label }}</a>{% endfor %}</div>
-{% for e in entries %}<div class="entry">
-<span class="tag t-blue">{{ e.get_entry_type_display }}</span>{% if e.origin == "PROFESSIONAL" %}<span class="tag t-green">Registro veterinario</span>{% else %}<span class="tag t-grey">Declarado por el tutor</span>{% endif %}{% if e.corrects_id %}<span class="tag t-amber">Corregido</span>{% endif %}{% if not e.is_active %}<span class="tag t-grey">No vigente</span>{% endif %}
-<h4>{{ e.title }}</h4>
-<div class="muted">{{ e.occurred_on|date:"d-m-Y" }}{% if e.next_due_on %} · próxima: {{ e.next_due_on|date:"d-m-Y" }}{% endif %}{% if e.weight_kg %} · {{ e.weight_kg }} kg{% endif %}{% if e.lot_number %} · lote {{ e.lot_number }}{% endif %}</div>
-{% if e.notes %}<p>{{ e.notes }}</p>{% endif %}
-<div class="muted">{% if e.origin == "PROFESSIONAL" %}Atendió: {{ e.author_name }} · {{ e.clinic_name }}{% else %}Registrado por el tutor{% endif %}{% if e.correction_reason %} · Motivo de corrección: {{ e.correction_reason }}{% endif %}</div>
-{% if e.origin == "PROFESSIONAL" and e.clinic_id == membership.clinic_id %}<a class="btn small ghost" style="margin-top:8px" href="{% url 'portal:vet-correct' pet.public_code e.pk %}">Corregir</a>{% endif %}
-</div>{% empty %}<p class="muted">Sin antecedentes{% if type_filter %} de este tipo{% endif %}.</p>{% endfor %}</div>
+{% for e in entries %}{% include "portal/vet/_entry_card.html" %}{% empty %}<p class="muted">Sin antecedentes{% if type_filter %} de este tipo{% endif %}.</p>{% endfor %}</div>
 {% endblock %}

@@ -56,6 +56,28 @@ data class ClinicalEntry(
     val clinicName: String,
     val isCorrection: Boolean,
     val correctionReason: String,
+    val anamnesis: String = "",
+    val temperatureC: Double? = null,
+    val heartRateBpm: Int? = null,
+    val respiratoryRateRpm: Int? = null,
+    val bodyConditionScore: Int? = null,
+    val physicalExam: String = "",
+    val diagnosis: String = "",
+    val treatment: String = "",
+    val manufacturer: String = "",
+    val lotExpiresOn: LocalDate? = null,
+    val dose: String = "",
+    val attachments: List<EntryAttachment> = emptyList(),
+    /** Foto del carnet de la que el tutor transcribió este antecedente (OCR). */
+    val sourceAttachmentId: String? = null,
+)
+
+/** Foto de respaldo de un antecedente (etiqueta de vacuna o carnet). */
+data class EntryAttachment(
+    val id: String,
+    val kindLabel: String,
+    val byProfessional: Boolean,
+    val authorName: String,
 )
 
 /** Identificación de la mascota en la ficha (el profesional no recibe el id interno). */
@@ -94,6 +116,7 @@ data class EntryForm(
     val weightKg: Double?,
     val lotNumber: String,
     val isActive: Boolean,
+    val sourceAttachmentId: String? = null,
 )
 
 /** A quién pertenece la ficha que se consulta: al tutor (por id) o al profesional autorizado (por código). */
@@ -159,6 +182,10 @@ data class Clinic(
     val verifiedAt: OffsetDateTime?,
     val isStale: Boolean,
     val inPetTechNetwork: Boolean,
+    val contactEmail: String = "",
+    val website: String = "",
+    val servicesDetail: String = "",
+    val sourceNote: String = "",
 )
 
 data class ClinicSearchResult(val clinics: List<Clinic>, val disclaimer: String)
@@ -168,4 +195,5 @@ data class ClinicFilters(
     val emergency: Boolean = false,
     val service: String? = null,
     val radiusKm: Int = 10,
+    val networkOnly: Boolean = false,
 )

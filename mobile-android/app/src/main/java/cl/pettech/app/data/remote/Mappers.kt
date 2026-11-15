@@ -5,6 +5,7 @@ import cl.pettech.app.domain.model.AccessStatus
 import cl.pettech.app.domain.model.AuditEvent
 import cl.pettech.app.domain.model.Clinic
 import cl.pettech.app.domain.model.ClinicalEntry
+import cl.pettech.app.domain.model.EntryAttachment
 import cl.pettech.app.domain.model.ClinicalRecord
 import cl.pettech.app.domain.model.EntryForm
 import cl.pettech.app.domain.model.EntryOrigin
@@ -85,6 +86,21 @@ fun ClinicalEntryDto.toDomain(): ClinicalEntry {
         clinicName = clinicName,
         isCorrection = isCorrection,
         correctionReason = correctionReason,
+        anamnesis = anamnesis,
+        temperatureC = temperatureC,
+        heartRateBpm = heartRateBpm,
+        respiratoryRateRpm = respiratoryRateRpm,
+        bodyConditionScore = bodyConditionScore,
+        physicalExam = physicalExam,
+        diagnosis = diagnosis,
+        treatment = treatment,
+        manufacturer = manufacturer,
+        lotExpiresOn = lotExpiresOn.toLocalDateOrNull(),
+        dose = dose,
+        attachments = attachments.map {
+            EntryAttachment(it.id, it.kindLabel.ifBlank { "Fotografía" }, it.origin == "PROFESSIONAL", it.authorName)
+        },
+        sourceAttachmentId = sourceAttachment,
     )
 }
 
@@ -123,6 +139,7 @@ fun EntryForm.toRequest(reason: String? = null): EntryWriteRequest = EntryWriteR
     lotNumber = lotNumber.trim(),
     isActive = isActive,
     reason = reason?.trim(),
+    sourceAttachment = sourceAttachmentId,
 )
 
 fun AccessRequestDto.toDomain(): AccessRequest = AccessRequest(
@@ -166,5 +183,10 @@ fun ClinicDto.toDomain(): Clinic = Clinic(
     infoOriginLabel = infoOriginLabel,
     verifiedAt = verifiedAt.toDateTimeOrNull(),
     isStale = isStale,
-    inPetTechNetwork = acceptsPettechRecords,
+    // Compatibilidad: servidores anteriores no envían in_pettech_network.
+    inPetTechNetwork = inPettechNetwork ?: acceptsPettechRecords,
+    contactEmail = contactEmail,
+    website = website,
+    servicesDetail = servicesDetail,
+    sourceNote = sourceNote,
 )

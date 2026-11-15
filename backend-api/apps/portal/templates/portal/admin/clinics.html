@@ -1,7 +1,9 @@
 {% extends "portal/base.html" %}{% block title %}Veterinarias{% endblock %}
 {% block content %}
 <div class="top"><div><h1>Veterinarias</h1><p class="sub">Establecimientos del catálogo y su cuenta de acceso al portal.</p></div>
-<a class="btn" href="{% url 'portal:admin-clinic-new' %}">＋ Nueva veterinaria</a></div>
+<div class="inline wrap"><a class="btn ghost" href="{% url 'portal:admin-directory-new' %}">＋ Agregar al directorio</a>
+<a class="btn" href="{% url 'portal:admin-clinic-new' %}">＋ Nueva veterinaria de la red</a></div></div>
+<div class="seg" style="margin-bottom:14px">{% for k, label in filters.items %}<a href="?ver={{ k }}" class="{% if k == current %}on{% endif %}">{{ label }}</a>{% endfor %}</div>
 <div class="card"><table>
 <thead><tr><th>Nombre</th><th>Comuna</th><th>Cuenta</th><th>Profesionales</th><th>Información</th><th>Estado</th></tr></thead>
 <tbody>{% for row in rows %}{% with c=row.clinic %}
@@ -10,6 +12,6 @@
 <td>{{ row.professionals }}</td>
 <td>{% if c.info_origin == "CONFIRMED" %}<span class="tag t-green">Confirmada</span>{% else %}<span class="tag t-amber">No confirmada</span>{% endif %}
 <div class="muted">{{ c.verified_at|date:"d-m-Y" }}</div></td>
-<td>{% if not c.is_active %}<span class="tag t-red">Suspendida</span>{% elif c.accepts_pettech_records %}<span class="tag t-blue">Red PetTech</span>{% else %}<span class="tag t-grey">Solo catálogo</span>{% endif %}</td></tr>
+<td>{% if not c.is_active %}<span class="tag t-red">Suspendida</span>{% elif c.in_pettech_network %}<span class="tag t-green">✔ Red PetTech</span>{% else %}<span class="tag t-grey">Directorio</span>{% if not c.account %} <a class="btn small ghost" href="{% url 'portal:admin-clinic-affiliate' c.pk %}">Afiliar</a>{% endif %}{% endif %}</td></tr>
 {% endwith %}{% empty %}<tr><td colspan="6" class="muted">Aún no hay veterinarias.</td></tr>{% endfor %}</tbody></table></div>
 {% endblock %}

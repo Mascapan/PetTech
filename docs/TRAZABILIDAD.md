@@ -71,8 +71,21 @@ Total backend: **91 pruebas automatizadas, 91 OK** (PostgreSQL 16 + PostGIS 3.4,
 | Requisito | Situación | Próximo paso |
 |---|---|---|
 | HU-14 → **Pase clínico de emergencia** (QR / enlace firmado temporal) | Recomendado como *Must* en la retroalimentación escrita (28-10-2026); no implementado | Decidir en el Informe 2 (ver DEC-024) |
-| HU-05 adjuntos (foto del carnet de vacunas) | La foto de perfil se guarda solo en el teléfono | Almacenamiento de objetos si hay capacidad |
+| HU-05 adjuntos (foto del carnet de vacunas) | ✅ Incremento 4: fotos en PostgreSQL (DEC-031) y transcripción asistida (DEC-032) | Medir % de campos corregidos en el piloto |
 | HU-06 recordatorios | ⏳ | WorkManager con `next_due_on` |
 | HU-13 eliminación de cuenta | por decidir (DEC-009) | según opción aprobada |
 | Cápsulas de salud preventiva por especie/etapa | Recomendación del profesor; no implementado | Evaluar como *Should* (Django Admin + lista en la app) |
 | RNF-04, RNF-08, NS-01 | 5 (piloto) | medición en entorno desplegado |
+
+
+## Incremento 4 (15-11-2026)
+| Necesidad | Requisito | Diseño / código | Prueba |
+|---|---|---|---|
+| Difundir la app y facilitar su instalación | Página pública con descarga | `portal/public/landing.html` | `LandingTests` |
+| Información del establecimiento al día, sin intermediario | HU-09/HU-12 ampliada | `ClinicProfileForm`, `update_clinic_profile` | `test_veterinaria_publica_su_horario`, `ClinicProfileV2Tests` |
+| Seguridad de cuentas del portal | Cambio de contraseña con revocación de sesiones | `PortalPasswordChangeForm`, `change_password` | `PasswordChangeTests` |
+| Gestión de la veterinaria | Indicadores agregados (sin datos individuales, RN-11) | `analytics.clinic_attention_metrics` | `ClinicMetricsTests` |
+| Estandarizar la ficha (retroalimentación del profesor) | Formato SOAP + signos vitales + datos de la vacuna | `ClinicalEntry` (campos estructurados), `PROFESSIONAL_REQUIRED` | `test_flujo_completo_portal_y_app` |
+| Encontrar veterinarias y distinguir la red | HU-07/HU-10 + DEC-029/030 | `directory.py`, `in_pettech_network`, `ClinicsMap.kt` | `test_directory.py`, `DirectoryAdminTests` |
+| Respaldo fotográfico de vacunas | HU-05 | `Attachment`, `images.normalize` | `test_attachments.py`, `VetPhotoTests` |
+| Usuarios que prefieren no digitar | HU-05 + DEC-032 | `CardTextParser`, `CardScanScreen` | `CardTextParserTest` |

@@ -22,10 +22,16 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PetTech">
 
-        <!-- Maps SDK for Android: la clave se inyecta desde local.properties (MAPS_API_KEY). -->
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="${MAPS_API_KEY}" />
+        <!-- Fotos de la cámara (etiqueta de vacuna, carnet): archivo temporal compartido solo con la cámara. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
         <activity
             android:name=".MainActivity"

@@ -1,0 +1,17 @@
+<div class="entry">
+<span class="tag t-blue">{{ e.get_entry_type_display }}</span>{% if e.origin == "PROFESSIONAL" %}<span class="tag t-green">Registro veterinario</span>{% else %}<span class="tag t-grey">Declarado por el tutor</span>{% endif %}{% if e.corrects_id %}<span class="tag t-amber">Corregido</span>{% endif %}{% if not e.is_active %}<span class="tag t-grey">No vigente</span>{% endif %}
+<h4>{{ e.title }}</h4>
+<div class="muted">{{ e.occurred_on|date:"d-m-Y" }}{% if e.next_due_on %} · próxima: {{ e.next_due_on|date:"d-m-Y" }}{% endif %}{% if e.weight_kg %} · {{ e.weight_kg }} kg{% endif %}{% if e.temperature_c %} · {{ e.temperature_c }} °C{% endif %}{% if e.heart_rate_bpm %} · FC {{ e.heart_rate_bpm }}{% endif %}{% if e.respiratory_rate_rpm %} · FR {{ e.respiratory_rate_rpm }}{% endif %}{% if e.body_condition_score %} · CC {{ e.body_condition_score }}/9{% endif %}{% if e.mucous_membranes %} · mucosas {{ e.get_mucous_membranes_display|lower }}{% endif %}</div>
+{% if e.manufacturer or e.lot_number or e.route or e.dose %}<div class="muted">{% if e.manufacturer %}Lab. {{ e.manufacturer }}{% endif %}{% if e.lot_number %} · lote {{ e.lot_number }}{% endif %}{% if e.lot_expires_on %} (vence {{ e.lot_expires_on|date:"m-Y" }}){% endif %}{% if e.route %} · vía {{ e.get_route_display|lower }}{% endif %}{% if e.dose %} · {{ e.dose }}{% endif %}</div>{% endif %}
+{% if e.anamnesis or e.physical_exam or e.diagnosis or e.treatment %}<dl class="kv" style="margin-top:6px">
+{% if e.anamnesis %}<dt><span class="soap">S</span>Anamnesis</dt><dd>{{ e.anamnesis|linebreaksbr }}</dd>{% endif %}
+{% if e.physical_exam %}<dt><span class="soap">O</span>Examen</dt><dd>{{ e.physical_exam|linebreaksbr }}</dd>{% endif %}
+{% if e.diagnosis %}<dt><span class="soap">A</span>Diagnóstico</dt><dd>{{ e.diagnosis|linebreaksbr }}</dd>{% endif %}
+{% if e.treatment %}<dt><span class="soap">P</span>Plan</dt><dd>{{ e.treatment|linebreaksbr }}</dd>{% endif %}
+</dl>{% endif %}
+{% if e.notes %}<p>{{ e.notes|linebreaksbr }}</p>{% endif %}
+{% if e.photos %}<div class="inline wrap" style="margin:6px 0">{% for ph in e.photos %}<a href="{% url 'portal:vet-attachment' pet.public_code ph.pk %}" target="_blank" rel="noopener" title="{{ ph.get_kind_display }} · {{ ph.author_name }}"><img class="photo-thumb" loading="lazy" src="{% url 'portal:vet-attachment' pet.public_code ph.pk %}" alt="{{ ph.get_kind_display }}"></a>{% endfor %}</div>{% endif %}
+{% if e.source_attachment_id %}<div class="muted">📄 Transcrito por el tutor desde la foto de su carnet.</div>{% endif %}
+<div class="muted">{% if e.origin == "PROFESSIONAL" %}Atendió: {{ e.author_name }} · {{ e.clinic_name }}{% else %}Registrado por el tutor{% endif %}{% if e.correction_reason %} · Motivo de corrección: {{ e.correction_reason }}{% endif %}</div>
+{% if e.origin == "PROFESSIONAL" and e.clinic_id == membership.clinic_id %}<a class="btn small ghost" style="margin-top:8px" href="{% url 'portal:vet-correct' pet.public_code e.pk %}">Corregir</a>{% endif %}
+</div>

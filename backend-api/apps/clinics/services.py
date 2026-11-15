@@ -26,6 +26,7 @@ class SearchParams:
     emergency: bool = False
     open_now: bool = False
     service: str | None = None
+    network: bool = False
 
 
 def is_open_at(clinic: Clinic, moment: datetime) -> bool:
@@ -80,6 +81,8 @@ def search(params: SearchParams):
         qs = qs.filter(attends_emergencies=True)
     if params.service:
         qs = qs.filter(services__contains=[params.service])
+    if params.network:
+        qs = qs.filter(accepts_pettech_records=True, account__isnull=False)
 
     now = timezone.now()
     results = []
@@ -90,5 +93,6 @@ def search(params: SearchParams):
         clinic.distance_km = round(clinic.distance.km, 2) if origin is not None else None
         results.append(clinic)
 
+    # Orden: abiertas según horario, luego cercanía. La Red PetTech se distingue visualmente, no se privilegia.
     results.sort(key=lambda c: (not c.is_open_now, c.distance_km if c.distance_km is not None else 0, c.name))
     return results

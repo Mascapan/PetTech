@@ -99,6 +99,8 @@ object TagColors {
     val Amber = Color(0xFF7A5300)
     val BlueBg = Color(0xFFDDEBFA)
     val Blue = Color(0xFF1D4E89)
+    val TealBg = Color(0xFFD5EFEB)
+    val Teal = Color(0xFF00695C)
 }
 
 /** Tarjeta con título de sección. */

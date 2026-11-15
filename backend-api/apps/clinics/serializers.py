@@ -30,6 +30,8 @@ class ClinicSerializer(serializers.ModelSerializer):
     info_origin_label = serializers.CharField(source="get_info_origin_display", read_only=True)
     is_stale = serializers.SerializerMethodField(help_text="La información supera el umbral de antigüedad.")
     opening_hours = OpeningHourSerializer(many=True, read_only=True)
+    in_pettech_network = serializers.BooleanField(
+        read_only=True, help_text="Afiliada a la Red PetTech (cuenta en el portal y ficha compartida).")
 
     class Meta:
         model = Clinic
@@ -37,7 +39,8 @@ class ClinicSerializer(serializers.ModelSerializer):
             "id", "name", "address", "commune", "phone", "latitude", "longitude", "distance_km",
             "attends_emergencies", "emergency_24h", "services", "is_open_now", "today_hours",
             "opening_hours", "info_origin", "info_origin_label", "verified_at", "is_stale",
-            "accepts_pettech_records",
+            "accepts_pettech_records", "in_pettech_network", "contact_email", "website", "services_detail",
+            "source_note",
         ]
 
     def get_latitude(self, obj) -> float:
@@ -70,6 +73,7 @@ class ClinicSearchQuerySerializer(serializers.Serializer):
     emergency = serializers.BooleanField(required=False, default=False)
     open_now = serializers.BooleanField(required=False, default=False)
     service = serializers.ChoiceField(choices=Service.choices, required=False)
+    network = serializers.BooleanField(required=False, default=False, help_text="Solo veterinarias de la Red PetTech.")
 
     def validate(self, attrs):
         if ("lat" in attrs) != ("lng" in attrs):

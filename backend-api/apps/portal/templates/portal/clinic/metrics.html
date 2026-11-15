@@ -1,0 +1,52 @@
+{% extends "portal/base.html" %}{% load static %}{% block title %}Métricas de atención{% endblock %}
+{% block content %}
+<div class="top"><div><h1>Métricas de atención</h1>
+<p class="sub">{{ clinic.name }} · {{ m.period_label }} · registros de sus profesionales en la ficha PetTech.</p></div>
+<div class="seg">{% for d, label in m.periods.items %}<a href="?dias={{ d }}" class="{% if d == m.days %}on{% endif %}">{{ label }}</a>{% endfor %}</div></div>
+
+<div class="kpis">
+  <div class="kpi accent"><div class="ki">🩺</div><div class="v">{{ m.kpis.attentions }}</div><div class="l">Atenciones registradas</div></div>
+  <div class="kpi"><div class="ki">🐾</div><div class="v">{{ m.kpis.patients }}</div><div class="l">Mascotas atendidas</div></div>
+  <div class="kpi"><div class="ki">✨</div><div class="v">{{ m.kpis.new_patients }}</div><div class="l">Pacientes nuevos<span class="muted"> · {{ m.kpis.returning_patients }} recurrentes</span></div></div>
+  <div class="kpi"><div class="ki">💉</div><div class="v">{{ m.kpis.vaccines }}</div><div class="l">Vacunas aplicadas</div></div>
+  <div class="kpi"><div class="ki">🔁</div><div class="v">{{ m.kpis.avg_per_patient|default:"—" }}</div><div class="l">Atenciones por mascota</div></div>
+  <div class="kpi"><div class="ki">📅</div><div class="v">{{ m.kpis.upcoming_30d }}</div><div class="l">Refuerzos o controles en 30 días</div></div>
+</div>
+
+<div class="grid g2">
+  <div class="card"><h2>Atenciones por mes (12 meses)</h2><div class="chart-box"><canvas id="c_month"></canvas></div></div>
+  <div class="card"><h2>Tipo de atención</h2><div class="chart-box"><canvas id="c_type"></canvas></div></div>
+</div>
+<div class="grid g3">
+  <div class="card"><h2>Especie</h2><div class="chart-box sm"><canvas id="c_species"></canvas></div></div>
+  <div class="card"><h2>Día de la semana</h2><div class="chart-box sm"><canvas id="c_week"></canvas></div></div>
+  <div class="card"><h2>Por profesional</h2><div class="chart-box sm"><canvas id="c_pro"></canvas></div></div>
+</div>
+<div class="grid g2">
+  <div class="card"><h2>Vacunas más aplicadas</h2><div class="chart-box"><canvas id="c_vac"></canvas></div></div>
+  <div class="card"><h2>Calidad y acceso</h2>
+    <dl class="kv">
+      <dt>Consultas con diagnóstico</dt><dd>{% if m.kpis.structured_pct is not None %}<strong>{{ m.kpis.structured_pct }} %</strong> de las visitas tienen diagnóstico registrado{% else %}Sin visitas en el período{% endif %}</dd>
+      <dt>Profesionales activos</dt><dd>{{ m.kpis.professionals_active }}</dd>
+      <dt>Solicitudes de acceso</dt><dd>{{ m.requests.total }}</dd>
+      <dt>Tasa de autorización</dt><dd>{% if m.requests.approval_rate is not None %}{{ m.requests.approval_rate }} % de los tutores autorizó{% else %}—{% endif %}</dd>
+      <dt>Respuesta del tutor</dt><dd>{% if m.requests.median_response_min is not None %}mediana {{ m.requests.median_response_min }} min{% else %}—{% endif %}</dd>
+      <dt>Fechas vencidas</dt><dd>{{ m.kpis.overdue_90d }} refuerzos o controles vencidos en los últimos 90 días</dd>
+    </dl>
+    <div class="chart-box sm" style="margin-top:12px"><canvas id="c_req"></canvas></div>
+  </div>
+</div>
+<p class="muted">Cifras agregadas generadas el {{ m.generated_at|date:"d-m-Y H:i" }}. La cuenta de la veterinaria no accede a fichas individuales: solo sus profesionales, con autorización vigente del tutor.</p>
+{{ m.charts|json_script:"charts" }}
+{% endblock %}
+{% block scripts %}<script src="{% static 'portal/vendor/chart.umd.min.js' %}"></script><script src="{% static 'portal/charts.js' %}"></script>
+<script>
+const C = JSON.parse(document.getElementById('charts').textContent);
+ptBar('c_month', C.monthly, 'Atenciones');
+ptDoughnut('c_type', C.by_type);
+ptDoughnut('c_species', C.by_species, ['#00796b', '#e76f51']);
+ptBar('c_week', C.weekday, 'Atenciones');
+ptBar('c_pro', C.per_professional, 'Atenciones', true);
+ptBar('c_vac', C.top_vaccines, 'Dosis', true);
+ptLine('c_req', C.requests_daily, 'Solicitudes');
+</script>{% endblock %}

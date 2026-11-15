@@ -11,6 +11,11 @@ import cl.pettech.app.domain.model.ClinicalRecord
 import cl.pettech.app.domain.model.EntryForm
 import cl.pettech.app.domain.model.EntryType
 import cl.pettech.app.domain.model.RecordTarget
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 /**
  * Ficha clínica. El mismo contrato sirve al tutor (por id de su mascota) y al profesional
@@ -43,6 +48,23 @@ class ClinicalRecordRepository(
                     api.professionalCorrectEntry(target.publicCode, entryId, form.toRequest(reason))
             }.toDomain()
         }
+
+    /** Sube una foto ya comprimida (JPEG). Devuelve el id de la foto. Solo el tutor sube desde la app. */
+    suspend fun uploadPhoto(petId: String, jpeg: ByteArray, kind: String, entryId: String?): AppResult<String> =
+        safeApiCall(errors) {
+            val text = "text/plain".toMediaType()
+            val part = MultipartBody.Part.createFormData(
+                "file", "foto.jpg", jpeg.toRequestBody("image/jpeg".toMediaType()),
+            )
+            api.ownerUploadAttachment(petId, part, kind.toRequestBody(text), entryId?.toRequestBody(text)).id
+        }
+
+    suspend fun photoBytes(target: RecordTarget, attachmentId: String): AppResult<ByteArray> = safeApiCall(errors) {
+        when (target) {
+            is RecordTarget.Owner -> api.ownerAttachment(target.petId, attachmentId)
+            is RecordTarget.Professional -> api.professionalAttachment(target.publicCode, attachmentId)
+        }.use { body -> withContext(Dispatchers.IO) { body.bytes() } }
+    }
 
     suspend fun professionalClinicName(): AppResult<String> = safeApiCall(errors) {
         api.professionalProfile().clinicName

@@ -39,6 +39,7 @@ import cl.pettech.app.ui.screens.home.TutorHomeScreen
 import cl.pettech.app.ui.screens.pets.PetDetailScreen
 import cl.pettech.app.ui.screens.pets.PetFormScreen
 import cl.pettech.app.ui.screens.records.ClinicalRecordScreen
+import cl.pettech.app.ui.screens.records.scan.CardScanScreen
 import cl.pettech.app.ui.screens.records.EntryFormScreen
 
 /**
@@ -58,6 +59,7 @@ object Routes {
     const val PET_EDIT = "tutor/pet/{petId}/edit"
     const val RECORD_OWNER = "tutor/pet/{petId}/record"
     const val ENTRY_OWNER = "tutor/pet/{petId}/record/entry?entryId={entryId}"
+    const val SCAN_OWNER = "tutor/pet/{petId}/record/scan"
     const val ACCESS = "tutor/access?petId={petId}"
     const val CLINICS = "clinics"
     const val CLINIC_DETAIL = "clinics/{clinicId}"
@@ -71,6 +73,7 @@ object Routes {
     fun petDetail(petId: String) = "tutor/pet/$petId"
     fun petEdit(petId: String) = "tutor/pet/$petId/edit"
     fun ownerRecord(petId: String) = "tutor/pet/$petId/record"
+    fun ownerScan(petId: String) = "tutor/pet/$petId/record/scan"
     fun ownerEntry(petId: String, entryId: String? = null) =
         "tutor/pet/$petId/record/entry" + (entryId?.let { "?entryId=$it" } ?: "")
     fun access(petId: String? = null) = "tutor/access" + (petId?.let { "?petId=$it" } ?: "")
@@ -199,7 +202,11 @@ private fun PetTechNavHost(sessionState: SessionState) {
                 onBack = { navController.popBackStack() },
                 onAddEntry = { navController.navigate(Routes.ownerEntry(petId)) },
                 onCorrectEntry = { entryId -> navController.navigate(Routes.ownerEntry(petId, entryId)) },
+                onScanCard = { navController.navigate(Routes.ownerScan(petId)) },
             )
+        }
+        composable(Routes.SCAN_OWNER, arguments = listOf(navArgument("petId") { type = NavType.StringType })) {
+            CardScanScreen(onBack = { navController.popBackStack() }, onDone = { navController.popBackStack() })
         }
         composable(
             Routes.ENTRY_OWNER,

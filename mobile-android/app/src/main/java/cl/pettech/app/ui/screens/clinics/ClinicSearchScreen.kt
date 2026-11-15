@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,12 +29,12 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -45,9 +44,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import cl.pettech.app.BuildConfig
-import cl.pettech.app.data.local.GeoPoint
-import cl.pettech.app.data.local.LocationProvider
 import cl.pettech.app.domain.model.Clinic
 import cl.pettech.app.domain.validation.Validators
 import cl.pettech.app.ui.components.ErrorBanner
@@ -56,15 +52,6 @@ import cl.pettech.app.ui.components.PetTechTopBar
 import cl.pettech.app.ui.components.StatusTag
 import cl.pettech.app.ui.components.TagColors
 import cl.pettech.app.ui.components.openDirections
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapUiSettings
-import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.rememberCameraPositionState
 import java.util.Locale
 
 /**
@@ -80,6 +67,7 @@ fun ClinicSearchScreen(
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         viewModel.onPermissionResult(it.values.any { granted -> granted })
     }
@@ -110,14 +98,16 @@ fun ClinicSearchScreen(
             })
             if (ui.loading || ui.locating) LinearProgressIndicator(Modifier.fillMaxWidth())
 
-            if (BuildConfig.MAPS_ENABLED) {
-                ClinicsMap(
-                    point = ui.point,
-                    clinics = ui.clinics,
-                    onMapClick = viewModel::setMapPoint,
-                    onOpenClinic = onOpenClinic,
-                )
-            }
+            ClinicsMap(
+                point = ui.point,
+                clinics = ui.clinics,
+                selectedId = selectedId,
+                onSelect = { selectedId = it },
+                onLongPress = { lat, lng ->
+                    selectedId = null
+                    viewModel.setMapPoint(lat, lng)
+                },
+            )
 
             LazyColumn(
                 Modifier.weight(1f),
@@ -126,11 +116,34 @@ fun ClinicSearchScreen(
             ) {
                 ui.note?.let { item { InfoBanner(it) } }
                 ui.errorMessage?.let { item { ErrorBanner(it) } }
-                if (!BuildConfig.MAPS_ENABLED) {
-                    item {
-                        InfoBanner(
-                            "Mapa no configurado en esta versión: se muestra la lista. " +
-                                "\"Cómo llegar\" abre la ruta en tu app de mapas.",
+                ui.clinics.firstOrNull { it.id == selectedId }?.let { selected ->
+                    item(key = "selected") {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                Text(
+                                    "Seleccionada en el mapa",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                TextButton(onClick = { selectedId = null }) { Text("Cerrar") }
+                            }
+                            ClinicCard(
+                                clinic = selected,
+                                onOpen = { onOpenClinic(selected.id) },
+                                onDirections = {
+                                    openDirections(context, selected.latitude, selected.longitude, selected.name)
+                                },
+                            )
+                        }
+                    }
+                }
+                if (ui.clinics.isNotEmpty()) {
+                    item(key = "summary") {
+                        val network = ui.clinics.count { it.inPetTechNetwork }
+                        Text(
+                            "${ui.clinics.size} veterinarias · $network en la Red PetTech",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -142,7 +155,7 @@ fun ClinicSearchScreen(
                                 style = MaterialTheme.typography.bodyLarge,
                             )
                             Text(
-                                "Prueba ampliar el radio, quitar filtros o buscar desde el centro de Chillán.",
+                                "Prueba ampliar el radio, quitar filtros, buscar desde el centro de Chillán o mantener presionado otro punto del mapa.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -194,6 +207,11 @@ private fun Filters(ui: ClinicSearchUiState, viewModel: ClinicSearchViewModel, o
         Text("Filtros", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 4.dp))
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(
+                selected = ui.filters.networkOnly,
+                onClick = viewModel::toggleNetworkOnly,
+                label = { Text("✓ Red PetTech") },
+            )
+            FilterChip(
                 selected = ui.filters.openNow,
                 onClick = viewModel::toggleOpenNow,
                 label = { Text("Abierto ahora") },
@@ -229,51 +247,6 @@ private fun Filters(ui: ClinicSearchUiState, viewModel: ClinicSearchViewModel, o
                     selected = ui.filters.radiusKm == km,
                     onClick = { viewModel.setRadius(km) },
                     label = { Text("$km km") },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ClinicsMap(
-    point: GeoPoint?,
-    clinics: List<Clinic>,
-    onMapClick: (Double, Double) -> Unit,
-    onOpenClinic: (String) -> Unit,
-) {
-    val start = point ?: LocationProvider.CHILLAN_CENTER
-    val camera = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(LatLng(start.latitude, start.longitude), 13f)
-    }
-    LaunchedEffect(point) {
-        point?.let { camera.animate(CameraUpdateFactory.newLatLngZoom(LatLng(it.latitude, it.longitude), 13f)) }
-    }
-    GoogleMap(
-        modifier = Modifier.fillMaxWidth().height(240.dp),
-        cameraPositionState = camera,
-        uiSettings = MapUiSettings(zoomControlsEnabled = true, mapToolbarEnabled = false),
-        onMapClick = { latLng -> onMapClick(latLng.latitude, latLng.longitude) },
-    ) {
-        point?.let { p ->
-            key(p) {
-                Marker(
-                    state = remember(p) { MarkerState(position = LatLng(p.latitude, p.longitude)) },
-                    title = "Punto de búsqueda",
-                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE),
-                )
-            }
-        }
-        clinics.forEach { clinic ->
-            key(clinic.id) {
-                Marker(
-                    state = remember(clinic.id) { MarkerState(position = LatLng(clinic.latitude, clinic.longitude)) },
-                    title = clinic.name,
-                    snippet = if (clinic.isOpenNow) "Abierto según horario · ver ficha" else "Cerrado según horario · ver ficha",
-                    icon = BitmapDescriptorFactory.defaultMarker(
-                        if (clinic.isOpenNow) BitmapDescriptorFactory.HUE_GREEN else BitmapDescriptorFactory.HUE_RED,
-                    ),
-                    onInfoWindowClick = { onOpenClinic(clinic.id) },
                 )
             }
         }
@@ -324,7 +297,11 @@ fun ClinicTags(clinic: Clinic) {
         } else if (clinic.attendsEmergencies) {
             StatusTag("Atiende urgencias", TagColors.RedBg, TagColors.Red)
         }
-        if (clinic.inPetTechNetwork) StatusTag("Red PetTech", TagColors.BlueBg, TagColors.Blue)
+        if (clinic.inPetTechNetwork) {
+            StatusTag("✓ Red PetTech", TagColors.TealBg, TagColors.Teal)
+        } else {
+            StatusTag("Directorio · no afiliada", TagColors.GreyBg, TagColors.Grey)
+        }
     }
 }
 

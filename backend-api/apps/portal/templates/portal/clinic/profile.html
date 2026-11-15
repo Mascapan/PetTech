@@ -1,19 +1,66 @@
-{% extends "portal/base.html" %}{% block title %}Horario y servicios{% endblock %}
+{% extends "portal/base.html" %}{% block title %}Datos, horario y servicios{% endblock %}
 {% block content %}
-<div class="top"><div><h1>Horario y servicios</h1>
-<p class="sub">Lo que publiques aquí lo ven los tutores en la app al buscar veterinarias, como «Confirmado por el establecimiento».</p></div></div>
+<div class="top"><div><h1>Datos, horario y servicios</h1>
+<p class="sub">Lo que publiques aquí lo ven los tutores en la app al buscar veterinarias, como «Confirmado por el establecimiento».</p></div>
+{% if clinic.in_pettech_network %}<span class="tag t-green big">✔ Red PetTech</span>{% endif %}</div>
 {% if error %}<div class="msg error">{{ error }}</div>{% endif %}
+{% for e in form.non_field_errors %}<div class="msg error">{{ e }}</div>{% endfor %}
 <form method="post" novalidate>{% csrf_token %}
 <div class="grid g2">
-<div class="card"><h2>Horario de atención</h2>
-<table class="hours"><thead><tr><th>Día</th><th>Abre</th><th>Desde</th><th>Hasta</th></tr></thead><tbody>
-{% for d in days %}<tr><td><strong>{{ d.label }}</strong></td><td>{{ d.open_day }}</td><td>{{ d.opens_at }}</td><td>{{ d.closes_at }}</td></tr>
-{% for e in d.non_field_errors %}<tr><td colspan="4" class="err">{{ d.label }}: {{ e }}</td></tr>{% endfor %}{% endfor %}
-</tbody></table>
-<p class="muted">Turno nocturno: si la hora "hasta" es menor que "desde" (p. ej., 20:00 a 08:00), termina al día siguiente.</p></div>
-<div class="card"><h2>Urgencias, contacto y servicios</h2>
-{% for f in form %}{% include "portal/_field.html" with field=f %}{% endfor %}
-<p class="muted">Última publicación: {{ clinic.verified_at|date:"d-m-Y H:i" }} ({{ clinic.get_info_origin_display }}).</p>
+  <div class="card"><h2>🏥 Establecimiento</h2>
+    {% include "portal/_field.html" with field=form.name %}
+    {% include "portal/_field.html" with field=form.address %}
+    {% include "portal/_field.html" with field=form.commune %}
+    <div class="grid g2">{% include "portal/_field.html" with field=form.latitude %}{% include "portal/_field.html" with field=form.longitude %}</div>
+    <div class="inline wrap">
+      <button type="button" class="btn ghost small" id="geo">📍 Usar mi ubicación actual</button>
+      <a class="btn ghost small" id="maplink" target="_blank" rel="noopener" href="#">🗺️ Ver en el mapa</a>
+    </div>
+    <p class="help" id="geomsg">Usa "mi ubicación" solo si estás en el establecimiento. También puedes copiar las coordenadas desde Google Maps (clic derecho sobre el local).</p>
+  </div>
+  <div class="card"><h2>☎️ Contacto</h2>
+    {% include "portal/_field.html" with field=form.phone %}
+    {% include "portal/_field.html" with field=form.contact_email %}
+    {% include "portal/_field.html" with field=form.website %}
+    <h2 style="margin-top:18px">🚑 Urgencias</h2>
+    {% include "portal/_field.html" with field=form.attends_emergencies %}
+    {% include "portal/_field.html" with field=form.emergency_24h %}
+  </div>
+</div>
+<div class="grid g2">
+  <div class="card"><h2>🩺 Servicios</h2>
+    {% include "portal/_field.html" with field=form.services %}
+    {% include "portal/_field.html" with field=form.services_detail %}
+    <div class="help"><span id="count">0</span>/1500 caracteres</div>
+  </div>
+  <div class="card"><h2>🕒 Horario de atención</h2>
+    <table class="hours"><thead><tr><th>Día</th><th>Abre</th><th>Desde</th><th>Hasta</th></tr></thead><tbody>
+    {% for d in days %}<tr><td><strong>{{ d.label }}</strong></td><td>{{ d.open_day }}</td><td>{{ d.opens_at }}</td><td>{{ d.closes_at }}</td></tr>
+    {% for e in d.non_field_errors %}<tr><td colspan="4" class="err">{{ d.label }}: {{ e }}</td></tr>{% endfor %}{% endfor %}
+    </tbody></table>
+    <p class="muted">Turno nocturno: si la hora "hasta" es menor que "desde" (p. ej., 20:00 a 08:00), termina al día siguiente.</p>
+  </div>
+</div>
+<div class="savebar"><span class="muted">Última publicación: {{ clinic.verified_at|date:"d-m-Y H:i" }} ({{ clinic.get_info_origin_display }}).</span>
 <button class="btn">Publicar información</button></div>
-</div></form>
+</form>
 {% endblock %}
+{% block scripts %}<script>
+(function () {
+  const lat = document.getElementById('id_latitude'), lng = document.getElementById('id_longitude');
+  const link = document.getElementById('maplink'), msg = document.getElementById('geomsg');
+  function upd() { link.href = 'https://www.openstreetmap.org/?mlat=' + encodeURIComponent(lat.value) + '&mlon=' + encodeURIComponent(lng.value) + '#map=18/' + encodeURIComponent(lat.value) + '/' + encodeURIComponent(lng.value); }
+  lat.addEventListener('input', upd); lng.addEventListener('input', upd); upd();
+  document.getElementById('geo').addEventListener('click', function () {
+    if (!navigator.geolocation) { msg.textContent = 'Tu navegador no permite obtener la ubicación.'; return; }
+    msg.textContent = 'Obteniendo ubicación…';
+    navigator.geolocation.getCurrentPosition(function (p) {
+      lat.value = p.coords.latitude.toFixed(6); lng.value = p.coords.longitude.toFixed(6); upd();
+      msg.textContent = 'Ubicación cargada (precisión aprox. ' + Math.round(p.coords.accuracy) + ' m). Revisa el mapa antes de publicar.';
+    }, function () { msg.textContent = 'No se pudo obtener la ubicación. Ingresa las coordenadas manualmente.'; },
+    {enableHighAccuracy: true, timeout: 15000});
+  });
+  const ta = document.getElementById('id_services_detail'), count = document.getElementById('count');
+  function c() { count.textContent = ta.value.length; } ta.addEventListener('input', c); c();
+})();
+</script>{% endblock %}

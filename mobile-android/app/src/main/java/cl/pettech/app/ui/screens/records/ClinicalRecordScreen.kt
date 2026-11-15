@@ -30,11 +30,15 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
@@ -71,9 +75,15 @@ fun ClinicalRecordScreen(
     onBack: () -> Unit,
     onAddEntry: () -> Unit,
     onCorrectEntry: (String) -> Unit,
+    onScanCard: (() -> Unit)? = null,
     viewModel: ClinicalRecordViewModel = viewModel(factory = ClinicalRecordViewModel.Factory),
 ) {
+    var carnetView by rememberSaveable { mutableStateOf(false) }
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    var photoEntryId by rememberSaveable { mutableStateOf<String?>(null) }
+    val pickPhoto = rememberPhotoPicker(viewModel::newCaptureUri) { uri ->
+        photoEntryId?.let { viewModel.addPhoto(it, uri) }
+    }
     LifecycleResumeEffect(Unit) {
         viewModel.load()
         onPauseOrDispose { }
@@ -119,6 +129,7 @@ fun ClinicalRecordScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 ui.errorMessage?.let { item { ErrorBanner(it) } }
+                ui.photoMessage?.let { item { InfoBanner(it) } }
                 if (viewModel.isProfessional) {
                     item {
                         InfoBanner(
@@ -129,6 +140,23 @@ fun ClinicalRecordScreen(
                 }
                 item { PetHeader(record, (viewModel.target as? RecordTarget.Owner)?.petId) }
                 item { SummaryCard(record) }
+                if (onScanCard != null) {
+                    item {
+                        OutlinedButton(onClick = onScanCard, modifier = Modifier.fillMaxWidth()) {
+                            Text("📷 ¿Tienes el carnet en papel? Escanéalo")
+                        }
+                    }
+                }
+                item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(selected = !carnetView, onClick = { carnetView = false }, label = { Text("Historial") })
+                        FilterChip(selected = carnetView, onClick = { carnetView = true }, label = { Text("Ver como carnet") })
+                    }
+                }
+                if (carnetView) {
+                    item { CarnetView(record.entries) }
+                    return@LazyColumn
+                }
                 item { TypeFilter(selected = ui.filter, onSelect = viewModel::setFilter) }
                 val entries = ui.visibleEntries
                 if (entries.isEmpty()) {
@@ -146,7 +174,20 @@ fun ClinicalRecordScreen(
                         entry = entry,
                         canCorrect = viewModel.canCorrect(entry),
                         onCorrect = { onCorrectEntry(entry.id) },
-                    )
+                    ) {
+                        EntryPhotos(
+                            entry = entry,
+                            photos = ui.photos,
+                            uploading = ui.uploadingEntryId == entry.id,
+                            canAdd = viewModel.canAddPhotos,
+                            onNeedPhoto = viewModel::loadPhoto,
+                            onAdd = {
+                                viewModel.clearPhotoMessage()
+                                photoEntryId = entry.id
+                                pickPhoto()
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -232,7 +273,12 @@ private fun TypeFilter(selected: EntryType?, onSelect: (EntryType?) -> Unit) {
 }
 
 @Composable
-private fun EntryCard(entry: ClinicalEntry, canCorrect: Boolean, onCorrect: () -> Unit) {
+private fun EntryCard(
+    entry: ClinicalEntry,
+    canCorrect: Boolean,
+    onCorrect: () -> Unit,
+    photos: @Composable () -> Unit = {},
+) {
     val professional = entry.origin == EntryOrigin.PROFESSIONAL
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -256,7 +302,24 @@ private fun EntryCard(entry: ClinicalEntry, canCorrect: Boolean, onCorrect: () -
             entry.occurredOn?.let { KeyValueRow("Fecha", Validators.formatDate(it)) }
             entry.nextDueOn?.let { KeyValueRow("Próxima fecha", Validators.formatDate(it)) }
             entry.weightKg?.let { KeyValueRow("Peso", "${formatKg(it)} kg") }
+            if (entry.manufacturer.isNotBlank()) KeyValueRow("Laboratorio", entry.manufacturer)
             if (entry.lotNumber.isNotBlank()) KeyValueRow("Lote / serie", entry.lotNumber)
+            entry.lotExpiresOn?.let { KeyValueRow("Vence el lote", Validators.formatDate(it)) }
+            if (entry.dose.isNotBlank()) KeyValueRow("Dosis", entry.dose)
+            val vitals = listOfNotNull(
+                entry.temperatureC?.let { "${formatKg(it)} °C" },
+                entry.heartRateBpm?.let { "FC $it lpm" },
+                entry.respiratoryRateRpm?.let { "FR $it rpm" },
+                entry.bodyConditionScore?.let { "CC $it/9" },
+            )
+            if (vitals.isNotEmpty()) KeyValueRow("Signos vitales", vitals.joinToString(" · "))
+            if (entry.anamnesis.isNotBlank()) KeyValueRow("Anamnesis", entry.anamnesis)
+            if (entry.physicalExam.isNotBlank()) KeyValueRow("Examen físico", entry.physicalExam)
+            if (entry.diagnosis.isNotBlank()) KeyValueRow("Diagnóstico", entry.diagnosis)
+            if (entry.treatment.isNotBlank()) KeyValueRow("Tratamiento", entry.treatment)
+            if (entry.sourceAttachmentId != null) {
+                StatusTag("📄 Transcrito desde la foto del carnet", TagColors.AmberBg, TagColors.Amber)
+            }
             if (entry.notes.isNotBlank()) {
                 Text(entry.notes, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -276,6 +339,7 @@ private fun EntryCard(entry: ClinicalEntry, canCorrect: Boolean, onCorrect: () -
                     color = TagColors.Amber,
                 )
             }
+            photos()
             if (canCorrect) {
                 TextButton(onClick = onCorrect, contentPadding = PaddingValues(0.dp)) { Text("Corregir") }
             }
@@ -284,3 +348,59 @@ private fun EntryCard(entry: ClinicalEntry, canCorrect: Boolean, onCorrect: () -
 }
 
 internal fun formatKg(value: Double): String = String.format(Locale("es", "CL"), "%.1f", value)
+
+
+/**
+ * Carnet digital: replica el formato del carnet de papel (tabla de vacunas y desparasitaciones con fecha,
+ * producto, lote, próxima dosis y quién la aplicó), para mostrarlo en la consulta como el carnet de siempre.
+ */
+@Composable
+private fun CarnetView(entries: List<ClinicalEntry>) {
+    val sections = listOf(EntryType.VACCINE to "Vacunas", EntryType.DEWORMING to "Desparasitaciones")
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        sections.forEach { (type, title) ->
+            val rows = entries.filter { it.type == type }.sortedBy { it.occurredOn }
+            SectionCard(title) {
+                if (rows.isEmpty()) {
+                    Text("Sin registros.", style = MaterialTheme.typography.bodyMedium)
+                } else {
+                    Row(Modifier.fillMaxWidth()) {
+                        listOf("Fecha" to 0.24f, "Producto / lote" to 0.38f, "Próxima" to 0.22f, "Firma" to 0.16f)
+                            .forEach { (h, w) ->
+                                Text(h, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.weight(w))
+                            }
+                    }
+                    HorizontalDivider()
+                    rows.forEach { e ->
+                        Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                            Text(e.occurredOn?.let { Validators.formatDate(it) } ?: "—",
+                                style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(0.24f))
+                            Text(e.title + if (e.lotNumber.isNotBlank()) "\nLote ${e.lotNumber}" else "",
+                                style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(0.38f))
+                            Text(e.nextDueOn?.let { Validators.formatDate(it) } ?: "—",
+                                style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(0.22f))
+                            Text(
+                                when {
+                                    e.origin == EntryOrigin.PROFESSIONAL -> "✔ Vet."
+                                    e.sourceAttachmentId != null -> "📄 Carnet"
+                                    else -> "Tutor"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (e.origin == EntryOrigin.PROFESSIONAL) TagColors.Green else TagColors.Grey,
+                                modifier = Modifier.weight(0.16f),
+                            )
+                        }
+                        HorizontalDivider()
+                    }
+                }
+            }
+        }
+        Text(
+            "✔ Vet.: registrado por una veterinaria de la Red PetTech · 📄 Carnet: transcrito por el tutor desde su " +
+                "carnet de papel (con foto de respaldo) · Tutor: declarado por el tutor.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}

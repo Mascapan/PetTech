@@ -140,6 +140,7 @@ class Command(BaseCommand):
                     clinic.account = users[email]
                     clinic.save(update_fields=["account"])
             self._seed_records(users, clinics)
+            self._seed_metrics_history(users, clinics)
 
         self.stdout.write(self.style.SUCCESS("Datos simulados listos. Contraseña: la definida en DEMO_PASSWORD."))
 
@@ -190,3 +191,50 @@ class Command(BaseCommand):
         ClinicalEntry.objects.create(pet=luna, entry_type=EntryType.ALLERGY, title="Penicilina [SIMULADO]",
                                      occurred_on=today - timedelta(days=30), **professional)
         self.stdout.write("Creada: ficha clínica simulada de Luna [DEMO]")
+
+    def _seed_metrics_history(self, users, clinics):
+        """
+        Historial SIMULADO de atenciones de la Clínica Andes [DEMO] en los últimos 12 meses, solo para que
+        los cuadros de métricas del portal tengan datos en la demostración. Determinístico e idempotente.
+        """
+        import random
+
+        clinic = clinics["Clínica Veterinaria Andes [DEMO]"]
+        if ClinicalEntry.objects.filter(clinic=clinic, title__endswith="[SIMULADO-M]").exists():
+            return
+        vet = users["vet1.demo@pettech.test"]
+        pets = list(Pet.objects.filter(name__in=["Luna [DEMO]", "Michi [DEMO]", "Rocky [DEMO]"]))
+        if not pets:
+            return
+        rng = random.Random(2026)
+        today = timezone.localdate()
+        catalog = [
+            (EntryType.VACCINE, "Antirrábica", {"manufacturer": "Laboratorio Demo", "route": "SC", "lot_number": "DEMO-R1"}),
+            (EntryType.VACCINE, "Óctuple canina", {"manufacturer": "Laboratorio Demo", "route": "SC", "lot_number": "DEMO-O8"}),
+            (EntryType.VACCINE, "Triple felina", {"manufacturer": "Laboratorio Demo", "route": "SC", "lot_number": "DEMO-T3"}),
+            (EntryType.VISIT, "Control general", {"anamnesis": "Control rutinario.", "diagnosis": "Paciente sano.",
+                                                  "temperature_c": 38.6, "heart_rate_bpm": 100, "respiratory_rate_rpm": 24}),
+            (EntryType.VISIT, "Consulta por vómitos", {"anamnesis": "Vómitos hace 2 días.", "diagnosis": "Gastritis aguda.",
+                                                       "treatment": "Dieta blanda y control en 5 días."}),
+            (EntryType.DEWORMING, "Antiparasitario interno", {"manufacturer": "Laboratorio Demo", "route": "ORAL",
+                                                              "dose": "1 comprimido, dosis única"}),
+            (EntryType.SURGERY, "Esterilización", {"diagnosis": "Esterilización electiva.", "treatment": "Analgesia 3 días."}),
+        ]
+        weights = [5, 3, 2, 6, 2, 4, 1]
+        created = 0
+        for _ in range(42):
+            etype, title, extra = rng.choices(catalog, weights=weights)[0]
+            pet = rng.choice(pets)
+            if title == "Triple felina" and pet.species != Pet.Species.CAT:
+                continue
+            if title == "Óctuple canina" and pet.species != Pet.Species.DOG:
+                continue
+            occurred = today - timedelta(days=rng.randint(0, 360))
+            ClinicalEntry.objects.create(
+                pet=pet, entry_type=etype, title=f"{title} [SIMULADO-M]", occurred_on=occurred,
+                next_due_on=occurred + timedelta(days=365) if etype == EntryType.VACCINE else None,
+                origin=Origin.PROFESSIONAL, created_by=vet, author_name=vet.full_name,
+                clinic=clinic, clinic_name=clinic.name, **extra,
+            )
+            created += 1
+        self.stdout.write(f"Creado: historial simulado de {created} atenciones para métricas (Clínica Andes [DEMO])")

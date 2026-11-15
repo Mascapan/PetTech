@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,6 +44,7 @@ import cl.pettech.app.ui.components.PetTechTopBar
 import cl.pettech.app.ui.components.SectionCard
 import cl.pettech.app.ui.components.openDialer
 import cl.pettech.app.ui.components.openDirections
+import cl.pettech.app.ui.components.openUrl
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -125,8 +127,14 @@ fun ClinicDetailScreen(
                     clinic.openingHours.forEach { h -> KeyValueRow(h.weekdayLabel, "${h.opensAt} – ${h.closesAt}") }
                 }
                 SectionCard("Servicios declarados") {
-                    if (clinic.services.isEmpty()) Text("Sin información.", style = MaterialTheme.typography.bodyMedium)
+                    if (clinic.services.isEmpty() && clinic.servicesDetail.isBlank()) {
+                        Text("Sin información.", style = MaterialTheme.typography.bodyMedium)
+                    }
                     clinic.services.forEach { Text("• ${it.label}", style = MaterialTheme.typography.bodyMedium) }
+                    if (clinic.servicesDetail.isNotBlank()) {
+                        Text("Otros servicios", style = MaterialTheme.typography.labelLarge)
+                        Text(clinic.servicesDetail, style = MaterialTheme.typography.bodyMedium)
+                    }
                     KeyValueRow(
                         "Urgencias",
                         when {
@@ -134,6 +142,27 @@ fun ClinicDetailScreen(
                             clinic.attendsEmergencies -> "Sí, en su horario (declarado)"
                             else -> "No declara"
                         },
+                    )
+                }
+                if (clinic.phone.isNotBlank() || clinic.contactEmail.isNotBlank() || clinic.website.isNotBlank()) {
+                    SectionCard("Contacto") {
+                        if (clinic.phone.isNotBlank()) KeyValueRow("Teléfono", clinic.phone)
+                        if (clinic.contactEmail.isNotBlank()) KeyValueRow("Correo", clinic.contactEmail)
+                        if (clinic.website.isNotBlank()) {
+                            TextButton(onClick = { openUrl(context, clinic.website) }) { Text("Abrir sitio web o red social") }
+                        }
+                    }
+                }
+                if (clinic.inPetTechNetwork) {
+                    InfoBanner(
+                        "Veterinaria de la Red PetTech: sus profesionales pueden solicitarte acceso a la ficha clínica " +
+                            "con el código PetTech de tu mascota, y lo que registren llegará a tu app.",
+                    )
+                } else {
+                    InfoBanner(
+                        "Veterinaria del directorio, aún no afiliada a PetTech: no puede ver ni completar la ficha " +
+                            "clínica de tu mascota. Información pública referencial" +
+                            (if (clinic.sourceNote.isNotBlank()) " (fuente: ${clinic.sourceNote})." else "."),
                     )
                 }
                 InfoBanner(

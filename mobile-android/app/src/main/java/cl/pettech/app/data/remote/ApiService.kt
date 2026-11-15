@@ -1,11 +1,16 @@
 package cl.pettech.app.data.remote
 
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -73,6 +78,26 @@ interface ApiService {
     @GET("professional/me/")
     suspend fun professionalProfile(): ProfessionalProfileDto
 
+    // ---------- Fotografías de la ficha (DEC-031) ----------
+
+    @Multipart
+    @POST("pets/{id}/clinical-record/attachments/")
+    suspend fun ownerUploadAttachment(
+        @Path("id") petId: String,
+        @Part file: MultipartBody.Part,
+        @Part("kind") kind: RequestBody,
+        @Part("entry") entry: RequestBody?,
+    ): AttachmentDto
+
+    @GET("pets/{id}/clinical-record/attachments/{attId}/")
+    suspend fun ownerAttachment(@Path("id") petId: String, @Path("attId") attachmentId: String): ResponseBody
+
+    @DELETE("pets/{id}/clinical-record/attachments/{attId}/")
+    suspend fun ownerDeleteAttachment(@Path("id") petId: String, @Path("attId") attachmentId: String): Response<Unit>
+
+    @GET("professional/pets/{code}/clinical-record/attachments/{attId}/")
+    suspend fun professionalAttachment(@Path("code") code: String, @Path("attId") attachmentId: String): ResponseBody
+
     @GET("professional/pets/{code}/clinical-record/")
     suspend fun professionalRecord(@Path("code") code: String, @Query("type") type: String? = null): ClinicalRecordDto
 
@@ -119,6 +144,7 @@ interface ApiService {
         @Query("emergency") emergency: Boolean?,
         @Query("open_now") openNow: Boolean?,
         @Query("service") service: String?,
+        @Query("network") network: Boolean?,
     ): ClinicSearchDto
 
     @GET("clinics/{id}/")

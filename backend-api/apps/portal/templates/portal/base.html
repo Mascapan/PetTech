@@ -10,7 +10,7 @@
 <body>
 <div class="layout">
   <aside class="side">
-    <div class="brand"><img src="{% static 'portal/logo.svg' %}" alt="">PetTech</div>
+    <a class="brand" href="{% url 'portal:home' %}"><img src="{% static 'portal/logo.svg' %}" alt="">PetTech</a>
     <div class="role">{{ user.get_role_display }}</div>
     <nav class="nav">
       {% if user.role == "ADMIN" %}
@@ -20,12 +20,14 @@
       {% elif user.role == "CLINIC" %}
         <a href="{% url 'portal:clinic-dashboard' %}" class="{% if section == 'dash' %}on{% endif %}">🏥 Mi veterinaria</a>
         <a href="{% url 'portal:clinic-pro-new' %}" class="{% if section == 'team' %}on{% endif %}">👩‍⚕️ Autorizar profesional</a>
-        <a href="{% url 'portal:clinic-profile' %}" class="{% if section == 'profile' %}on{% endif %}">🕒 Horario y servicios</a>
+        <a href="{% url 'portal:clinic-metrics' %}" class="{% if section == 'metrics' %}on{% endif %}">📈 Métricas de atención</a>
+        <a href="{% url 'portal:clinic-profile' %}" class="{% if section == 'profile' %}on{% endif %}">🏷️ Datos, horario y servicios</a>
       {% elif user.role == "PROFESSIONAL" %}
         <a href="{% url 'portal:vet-home' %}" class="{% if section == 'vet' %}on{% endif %}">🔎 Código PetTech</a>
       {% endif %}
     </nav>
     <div class="bottom">
+      <a class="side-link {% if section == 'password' %}on{% endif %}" href="{% url 'portal:password-change' %}">🔑 Cambiar contraseña</a>
       <div class="who">{{ user.full_name }}<br><span class="muted" style="color:#cde">{{ user.email }}</span></div>
       <form method="post" action="{% url 'portal:logout' %}">{% csrf_token %}
         <button class="btn ghost small" style="margin:6px 12px">Cerrar sesión</button></form>

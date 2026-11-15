@@ -2,8 +2,10 @@ package cl.pettech.app.di
 
 import android.content.Context
 import cl.pettech.app.BuildConfig
+import cl.pettech.app.data.local.CardTextRecognizer
 import cl.pettech.app.data.local.LocationProvider
 import cl.pettech.app.data.local.PetPhotoStore
+import cl.pettech.app.data.local.PhotoTools
 import cl.pettech.app.data.remote.ApiErrorParser
 import cl.pettech.app.data.remote.ApiService
 import cl.pettech.app.data.remote.AuthInterceptor
@@ -82,5 +84,7 @@ class AppContainer(context: Context) {
     val clinicRepository = ClinicRepository(api, errorParser)
 
     val petPhotoStore = PetPhotoStore(context.applicationContext)
+    val photoTools = PhotoTools(context.applicationContext)
+    val cardTextRecognizer = CardTextRecognizer()
     val locationProvider = LocationProvider(context.applicationContext)
 }

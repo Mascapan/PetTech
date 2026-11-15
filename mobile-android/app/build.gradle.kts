@@ -16,9 +16,6 @@ val localProps = Properties().apply {
     if (file.exists()) file.inputStream().use { load(it) }
 }
 val apiBaseUrlDebug: String = localProps.getProperty("pettech.apiBaseUrl") ?: "http://10.0.2.2:8000/api/v1/"
-// Clave de Maps SDK for Android (HU-10). Opcional: sin clave la búsqueda funciona en modo lista.
-//   MAPS_API_KEY=AIza...   (en local.properties; nunca en Git)
-val mapsApiKey: String = localProps.getProperty("MAPS_API_KEY") ?: ""
 val apiBaseUrlRelease: String = localProps.getProperty("pettech.apiBaseUrl.release") ?: "https://api.pettech.invalid/api/v1/"
 
 // Firma de publicación (Google Play). El keystore y sus claves viven SOLO en local.properties (no versionado):
@@ -35,11 +32,9 @@ android {
         applicationId = "cl.pettech.app"
         minSdk = 28 // Android 9 (RNF-06)
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.3.0"
+        versionCode = 4
+        versionName = "0.4.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
-        buildConfigField("boolean", "MAPS_ENABLED", mapsApiKey.isNotBlank().toString())
     }
 
     signingConfigs {
@@ -110,8 +105,10 @@ dependencies {
     implementation(libs.okhttp.logging)
 
     implementation(libs.play.services.location)
-    implementation(libs.play.services.maps)
-    implementation(libs.maps.compose)
+    // Mapa OpenStreetMap (sin clave ni facturación; atribución obligatoria, DEC-030)
+    implementation(libs.osmdroid.android)
+    // OCR del carnet en papel, en el dispositivo (DEC-032)
+    implementation(libs.mlkit.text.recognition)
 
     debugImplementation(libs.androidx.ui.tooling)
 

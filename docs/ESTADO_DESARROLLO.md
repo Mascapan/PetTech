@@ -1,6 +1,24 @@
 # Estado del desarrollo
 
-**Última actualización:** 8 de noviembre de 2026 (tarde) · **Incremento:** 3 — portal web y preparación para Google Play.
+**Última actualización:** 15 de noviembre de 2026 · **Incremento:** 4 — página pública, portal de la veterinaria,
+ficha estructurada, red PetTech en el mapa, fotografías y transcripción del carnet.
+
+## Incremento 4 (15-11-2026)
+| Funcionalidad | Dónde | Estado |
+|---|---|---|
+| Página pública (autopromoción, descarga del APK, ingreso de veterinarias) | `/` (`LandingView`, `PETTECH_APK_URL`) | ✅ pruebas + captura |
+| Perfil editable de la veterinaria (nombre, dirección, ubicación, contacto, "otros servicios") | Portal → Datos, horario y servicios | ✅ pruebas + captura |
+| Cambio de contraseña (todos los roles del portal; cierra sesiones de la app) | `/portal/contrasena/` | ✅ pruebas |
+| Métricas de atención de la veterinaria (tipo, especie, mes, día, profesional, vacunas, pacientes nuevos/recurrentes) | Portal → Métricas | ✅ pruebas + captura (datos SIMULADOS de `seed_demo`) |
+| Ficha clínica en formulario estandarizado (SOAP + signos vitales + vacuna con laboratorio, lote, vencimiento, vía) | Portal profesional + API | ✅ pruebas + captura |
+| Directorio no afiliado (OSM / manual con fuente) y afiliación a la Red PetTech | Portal admin + `import_osm_directory` | ✅ pruebas · ⏳ carga de datos reales de Chillán |
+| Mapa OpenStreetMap con ubicación, marcadores Red PetTech vs directorio, filtro "Red PetTech" | App (osmdroid) | 🟡 escrito, falta compilar |
+| Fotos: etiqueta de vacuna (portal y app), normalizadas sin EXIF, en PostgreSQL | API + portal + app | ✅ API/portal con pruebas · 🟡 app sin compilar |
+| Transcripción asistida del carnet (OCR ML Kit en el teléfono + revisión) y vista "Ver como carnet" | App | 🟡 intérprete verificado (5 casos) · app sin compilar |
+
+Backend: **142/142 pruebas** (PostgreSQL 16 + PostGIS). Pendiente: compilar la app (versión 0.4.0) en Android Studio,
+desplegar en Render y cargar el directorio real de Chillán.
+
 Incremento anterior: 2 (ficha clínica, acceso por código PetTech,
 búsqueda de veterinarias y app según el boceto del equipo)
 

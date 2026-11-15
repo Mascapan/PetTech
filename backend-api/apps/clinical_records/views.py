@@ -1,5 +1,7 @@
+from django.http import HttpResponse
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,8 +12,14 @@ from apps.core.permissions import IsProfessional, IsTutor
 from apps.pets.models import Pet
 
 from . import services
-from .models import EntryType
-from .serializers import ClinicalEntrySerializer, CorrectionSerializer, build_record_payload
+from .models import Attachment, EntryType
+from .serializers import (
+    AttachmentSerializer,
+    AttachmentUploadSerializer,
+    ClinicalEntrySerializer,
+    CorrectionSerializer,
+    build_record_payload,
+)
 
 TYPE_PARAM = OpenApiParameter("type", str, description=f"Filtra por tipo: {', '.join(EntryType.values)}")
 
@@ -138,3 +146,70 @@ class ProfessionalEntryCorrectView(APIView):
         data, reason = _split_correction(serializer)
         entry = services.correct(request.user, pet, entry_id, data, reason, membership=membership)
         return Response(ClinicalEntrySerializer(entry).data, status=status.HTTP_201_CREATED)
+
+
+# ------------------------------------------------------------------ Fotografías (DEC-031)
+
+def image_response(att: Attachment) -> HttpResponse:
+    response = HttpResponse(bytes(att.content), content_type=att.content_type)
+    response["Cache-Control"] = "private, max-age=3600"
+    response["Content-Disposition"] = f'inline; filename="pettech-{att.pk}.jpg"'
+    return response
+
+
+class OwnerAttachmentCreateView(APIView):
+    permission_classes = [IsTutor]
+    parser_classes = [MultiPartParser, FormParser]
+
+    @extend_schema(tags=["clinical-records"], summary="Adjuntar foto (etiqueta de vacuna o carnet)",
+                   request={"multipart/form-data": AttachmentUploadSerializer}, responses={201: AttachmentSerializer})
+    def post(self, request, pet_id):
+        pet = get_object_or_404(Pet, pk=pet_id, owner=request.user)
+        form = AttachmentUploadSerializer(data=request.data)
+        form.is_valid(raise_exception=True)
+        att = services.add_attachment(request.user, pet, form.validated_data["file"], form.validated_data["kind"],
+                                      entry_id=form.validated_data.get("entry"))
+        return Response(AttachmentSerializer(att).data, status=status.HTTP_201_CREATED)
+
+
+class OwnerAttachmentView(APIView):
+    permission_classes = [IsTutor]
+
+    @extend_schema(tags=["clinical-records"], summary="Ver la foto (JPEG)", responses={(200, "image/jpeg"): bytes})
+    def get(self, request, pet_id, attachment_id):
+        pet = get_object_or_404(Pet, pk=pet_id, owner=request.user)
+        return image_response(get_object_or_404(Attachment, pk=attachment_id, pet=pet))
+
+    @extend_schema(tags=["clinical-records"], summary="Eliminar una foto propia", responses={204: None})
+    def delete(self, request, pet_id, attachment_id):
+        pet = get_object_or_404(Pet, pk=pet_id, owner=request.user)
+        services.delete_own_attachment(request.user, pet, attachment_id)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ProfessionalAttachmentCreateView(APIView):
+    permission_classes = [IsProfessional]
+    parser_classes = [MultiPartParser, FormParser]
+
+    @extend_schema(tags=["professional"], summary="Adjuntar foto de la etiqueta a un registro propio",
+                   request={"multipart/form-data": AttachmentUploadSerializer}, responses={201: AttachmentSerializer})
+    def post(self, request, code):
+        pet, membership = access.require_active_grant(request.user, code, AuditEvent.Action.ATTACHMENT_ADDED)
+        form = AttachmentUploadSerializer(data=request.data)
+        form.is_valid(raise_exception=True)
+        att = services.add_attachment(request.user, pet, form.validated_data["file"], form.validated_data["kind"],
+                                      entry_id=form.validated_data.get("entry"), membership=membership)
+        return Response(AttachmentSerializer(att).data, status=status.HTTP_201_CREATED)
+
+
+class ProfessionalAttachmentView(APIView):
+    permission_classes = [IsProfessional]
+
+    @extend_schema(tags=["professional"], summary="Ver una foto de la ficha (JPEG)",
+                   responses={(200, "image/jpeg"): bytes})
+    def get(self, request, code, attachment_id):
+        pet, membership = access.require_active_grant(request.user, code, AuditEvent.Action.ATTACHMENT_READ)
+        att = get_object_or_404(Attachment, pk=attachment_id, pet=pet)
+        access.audit(request.user, AuditEvent.Action.ATTACHMENT_READ, pet=pet, clinic=membership.clinic,
+                     resource_id=att.pk)
+        return image_response(att)

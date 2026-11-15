@@ -1,0 +1,28 @@
+{% extends "portal/base.html" %}{% block title %}Directorio de veterinarias{% endblock %}
+{% block content %}
+<div class="top"><div><h1>Directorio de veterinarias</h1>
+<p class="sub">Veterinarias <strong>no afiliadas</strong>: aparecen en la app como información pública no confirmada, sin el distintivo Red PetTech.</p></div>
+<a class="btn ghost" href="{% url 'portal:admin-clinics' %}?ver=directorio">← Volver</a></div>
+<div class="msg info">No copies información desde Google Maps: sus términos de servicio lo prohíben. Usa OpenStreetMap (importación abajo) o el sitio web / redes sociales de cada establecimiento, indicando la fuente.</div>
+<div class="grid g2">
+<div class="card"><h2>📥 Importar desde OpenStreetMap</h2>
+<form method="post" action="{% url 'portal:admin-directory-import' %}" enctype="multipart/form-data">{% csrf_token %}
+{% for f in import_form %}{% include "portal/_field.html" with field=f %}{% endfor %}
+<button class="btn">Importar</button></form>
+<p class="muted">Consulta para <a href="https://overpass-turbo.eu" target="_blank" rel="noopener">overpass-turbo.eu</a> (Exportar → datos sin procesar JSON):</p>
+<pre class="pre">[out:json][timeout:25];
+nwr["amenity"="veterinary"](-36.70,-72.20,-36.52,-72.00);
+out center tags;</pre>
+<p class="muted">La importación no duplica registros, no modifica veterinarias que ya confirmaron sus datos y conserva la atribución © colaboradores de OpenStreetMap (ODbL).</p></div>
+<div class="card"><h2>✍️ Agregar manualmente</h2>
+<form method="post" novalidate>{% csrf_token %}
+{% for e in form.non_field_errors %}<div class="msg error">{{ e }}</div>{% endfor %}
+{% include "portal/_field.html" with field=form.name %}{% include "portal/_field.html" with field=form.address %}
+<div class="grid g2">{% include "portal/_field.html" with field=form.commune %}{% include "portal/_field.html" with field=form.phone %}</div>
+{% include "portal/_field.html" with field=form.website %}
+<div class="grid g2">{% include "portal/_field.html" with field=form.latitude %}{% include "portal/_field.html" with field=form.longitude %}</div>
+{% include "portal/_field.html" with field=form.attends_emergencies %}{% include "portal/_field.html" with field=form.services %}
+{% include "portal/_field.html" with field=form.source_note %}
+<button class="btn">Agregar al directorio</button></form></div>
+</div>
+{% endblock %}

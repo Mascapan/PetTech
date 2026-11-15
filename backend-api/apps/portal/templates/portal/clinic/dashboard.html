@@ -1,7 +1,9 @@
 {% extends "portal/base.html" %}{% load static %}{% block title %}Mi veterinaria{% endblock %}
 {% block content %}
 <div class="top"><div><h1>{{ clinic.name }}</h1><p class="sub">{{ clinic.address }}, {{ clinic.commune }}</p></div>
-<a class="btn" href="{% url 'portal:clinic-pro-new' %}">＋ Autorizar profesional</a></div>
+<div class="inline wrap">{% if clinic.in_pettech_network %}<span class="tag t-green big">✔ Red PetTech</span>{% endif %}
+<a class="btn ghost" href="{% url 'portal:clinic-metrics' %}">📈 Ver métricas</a>
+<a class="btn" href="{% url 'portal:clinic-pro-new' %}">＋ Autorizar profesional</a></div></div>
 {% if m.info_is_stale or clinic.info_origin != "CONFIRMED" %}
 <div class="msg info">Tu horario y servicios {% if clinic.info_origin != "CONFIRMED" %}aún no están confirmados por ustedes{% else %}no se actualizan hace tiempo{% endif %}.
 Los tutores ven esa advertencia. <a href="{% url 'portal:clinic-profile' %}">Actualizar ahora</a>.</div>{% endif %}

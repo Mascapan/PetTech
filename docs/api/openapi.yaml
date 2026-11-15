@@ -319,6 +319,12 @@ paths:
           maximum: 180
           minimum: -180
       - in: query
+        name: network
+        schema:
+          type: boolean
+          default: false
+        description: Solo veterinarias de la Red PetTech.
+      - in: query
         name: open_now
         schema:
           type: boolean
@@ -511,6 +517,86 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/v1/pets/{pet_id}/clinical-record/attachments/:
+    post:
+      operationId: pets_clinical_record_attachments_create
+      summary: Adjuntar foto (etiqueta de vacuna o carnet)
+      parameters:
+      - in: path
+        name: pet_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - clinical-records
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AttachmentUploadRequest'
+        required: true
+      security:
+      - knoxApiToken: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+          description: ''
+  /api/v1/pets/{pet_id}/clinical-record/attachments/{attachment_id}/:
+    get:
+      operationId: pets_clinical_record_attachments_retrieve
+      summary: Ver la foto (JPEG)
+      parameters:
+      - in: path
+        name: attachment_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: pet_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - clinical-records
+      security:
+      - knoxApiToken: []
+      responses:
+        '200':
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+          description: ''
+    delete:
+      operationId: pets_clinical_record_attachments_destroy
+      summary: Eliminar una foto propia
+      parameters:
+      - in: path
+        name: attachment_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: pet_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - clinical-records
+      security:
+      - knoxApiToken: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/pets/{pet_id}/clinical-record/entries/:
     post:
       operationId: pets_clinical_record_entries_create
@@ -763,6 +849,61 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/v1/professional/pets/{code}/clinical-record/attachments/:
+    post:
+      operationId: professional_pets_clinical_record_attachments_create
+      summary: Adjuntar foto de la etiqueta a un registro propio
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - professional
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AttachmentUploadRequest'
+        required: true
+      security:
+      - knoxApiToken: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+          description: ''
+  /api/v1/professional/pets/{code}/clinical-record/attachments/{attachment_id}/:
+    get:
+      operationId: professional_pets_clinical_record_attachments_retrieve
+      summary: Ver una foto de la ficha (JPEG)
+      parameters:
+      - in: path
+        name: attachment_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - professional
+      security:
+      - knoxApiToken: []
+      responses:
+        '200':
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+          description: ''
   /api/v1/professional/pets/{code}/clinical-record/entries/:
     post:
       operationId: professional_pets_clinical_record_entries_create
@@ -920,6 +1061,11 @@ components:
       - PROFESSIONAL_AUTHORIZED
       - PROFESSIONAL_SUSPENDED
       - CLINIC_CREATED
+      - PASSWORD_CHANGED
+      - CLINIC_AFFILIATED
+      - DIRECTORY_UPDATED
+      - ATTACHMENT_ADDED
+      - ATTACHMENT_READ
       type: string
       description: |-
         * `ACCESS_REQUESTED` - Solicitó acceso
@@ -933,6 +1079,84 @@ components:
         * `PROFESSIONAL_AUTHORIZED` - Autorizó a un profesional
         * `PROFESSIONAL_SUSPENDED` - Suspendió a un profesional
         * `CLINIC_CREATED` - Creó una veterinaria
+        * `PASSWORD_CHANGED` - Cambió su contraseña
+        * `CLINIC_AFFILIATED` - Afilió una veterinaria a la red
+        * `DIRECTORY_UPDATED` - Actualizó el directorio de veterinarias
+        * `ATTACHMENT_ADDED` - Adjuntó una fotografía a la ficha
+        * `ATTACHMENT_READ` - Vio una fotografía de la ficha
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/KindEnum'
+          readOnly: true
+          title: Tipo
+        kind_label:
+          type: string
+          readOnly: true
+        entry:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        origin:
+          allOf:
+          - $ref: '#/components/schemas/OriginEnum'
+          readOnly: true
+          title: Origen
+        origin_label:
+          type: string
+          readOnly: true
+        author_name:
+          type: string
+          readOnly: true
+          title: Autor
+        width:
+          type: integer
+          readOnly: true
+        height:
+          type: integer
+          readOnly: true
+        size_bytes:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - author_name
+      - created_at
+      - entry
+      - height
+      - id
+      - kind
+      - kind_label
+      - origin
+      - origin_label
+      - size_bytes
+      - width
+    AttachmentUploadRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/KindEnum'
+          default: VACCINE_LABEL
+        entry:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - file
     AuditEvent:
       type: object
       properties:
@@ -981,6 +1205,9 @@ components:
       - expiry
       - token
       - user
+    BlankEnum:
+      enum:
+      - ''
     Clinic:
       type: object
       description: |-
@@ -1065,10 +1292,37 @@ components:
           title: Participa en la red PetTech
           description: Sus profesionales verificados pueden solicitar acceso y registrar
             atenciones.
+        in_pettech_network:
+          type: boolean
+          readOnly: true
+          description: Afiliada a la Red PetTech (cuenta en el portal y ficha compartida).
+        contact_email:
+          type: string
+          format: email
+          title: Correo de contacto
+          maxLength: 254
+        website:
+          type: string
+          format: uri
+          title: Sitio web o red social
+          maxLength: 200
+        services_detail:
+          type: string
+          title: Otros servicios (detalle)
+          description: Texto libre con el detalle de servicios, especialidades o prestaciones
+            adicionales.
+          maxLength: 1500
+        source_note:
+          type: string
+          title: Fuente del dato (directorio)
+          description: 'Para establecimientos no afiliados: de dónde se obtuvo la
+            información pública (p. ej. OpenStreetMap).'
+          maxLength: 200
       required:
       - address
       - distance_km
       - id
+      - in_pettech_network
       - info_origin_label
       - is_open_now
       - is_stale
@@ -1123,6 +1377,70 @@ components:
           type: string
           title: Lote / serie
           maxLength: 40
+        anamnesis:
+          type: string
+          title: Anamnesis (S)
+          maxLength: 2000
+        temperature_c:
+          type: number
+          format: double
+          maximum: 45
+          minimum: 30
+          nullable: true
+          title: Temperatura (°C)
+        heart_rate_bpm:
+          type: integer
+          maximum: 400
+          minimum: 20
+          nullable: true
+          title: Frecuencia cardíaca (lpm)
+        respiratory_rate_rpm:
+          type: integer
+          maximum: 200
+          minimum: 4
+          nullable: true
+          title: Frecuencia respiratoria (rpm)
+        body_condition_score:
+          type: integer
+          maximum: 9
+          minimum: 1
+          nullable: true
+          title: Condición corporal (1-9)
+        mucous_membranes:
+          title: Mucosas
+          oneOf:
+          - $ref: '#/components/schemas/MucousMembranesEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        physical_exam:
+          type: string
+          title: Examen físico (O)
+          maxLength: 2000
+        diagnosis:
+          type: string
+          title: Diagnóstico (A)
+          maxLength: 1000
+        treatment:
+          type: string
+          title: Tratamiento / plan (P)
+          maxLength: 2000
+        manufacturer:
+          type: string
+          title: Laboratorio
+          maxLength: 80
+        lot_expires_on:
+          type: string
+          format: date
+          nullable: true
+          title: Vencimiento del lote
+        route:
+          title: Vía de administración
+          oneOf:
+          - $ref: '#/components/schemas/RouteEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        dose:
+          type: string
+          title: Dosis y frecuencia
+          maxLength: 120
         is_active:
           type: boolean
           title: Vigente
@@ -1161,7 +1479,18 @@ components:
           type: string
           readOnly: true
           title: Motivo de la corrección
+        attachments:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          readOnly: true
+        source_attachment:
+          type: string
+          format: uuid
+          nullable: true
       required:
+      - attachments
       - author_name
       - clinic_name
       - correction_reason
@@ -1213,10 +1542,78 @@ components:
           type: string
           title: Lote / serie
           maxLength: 40
+        anamnesis:
+          type: string
+          title: Anamnesis (S)
+          maxLength: 2000
+        temperature_c:
+          type: number
+          format: double
+          maximum: 45
+          minimum: 30
+          nullable: true
+          title: Temperatura (°C)
+        heart_rate_bpm:
+          type: integer
+          maximum: 400
+          minimum: 20
+          nullable: true
+          title: Frecuencia cardíaca (lpm)
+        respiratory_rate_rpm:
+          type: integer
+          maximum: 200
+          minimum: 4
+          nullable: true
+          title: Frecuencia respiratoria (rpm)
+        body_condition_score:
+          type: integer
+          maximum: 9
+          minimum: 1
+          nullable: true
+          title: Condición corporal (1-9)
+        mucous_membranes:
+          title: Mucosas
+          oneOf:
+          - $ref: '#/components/schemas/MucousMembranesEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        physical_exam:
+          type: string
+          title: Examen físico (O)
+          maxLength: 2000
+        diagnosis:
+          type: string
+          title: Diagnóstico (A)
+          maxLength: 1000
+        treatment:
+          type: string
+          title: Tratamiento / plan (P)
+          maxLength: 2000
+        manufacturer:
+          type: string
+          title: Laboratorio
+          maxLength: 80
+        lot_expires_on:
+          type: string
+          format: date
+          nullable: true
+          title: Vencimiento del lote
+        route:
+          title: Vía de administración
+          oneOf:
+          - $ref: '#/components/schemas/RouteEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        dose:
+          type: string
+          title: Dosis y frecuencia
+          maxLength: 120
         is_active:
           type: boolean
           title: Vigente
           description: 'Para alergias, patologías y fármacos: si sigue vigente.'
+        source_attachment:
+          type: string
+          format: uuid
+          nullable: true
       required:
       - entry_type
       - occurred_on
@@ -1259,10 +1656,78 @@ components:
           type: string
           title: Lote / serie
           maxLength: 40
+        anamnesis:
+          type: string
+          title: Anamnesis (S)
+          maxLength: 2000
+        temperature_c:
+          type: number
+          format: double
+          maximum: 45
+          minimum: 30
+          nullable: true
+          title: Temperatura (°C)
+        heart_rate_bpm:
+          type: integer
+          maximum: 400
+          minimum: 20
+          nullable: true
+          title: Frecuencia cardíaca (lpm)
+        respiratory_rate_rpm:
+          type: integer
+          maximum: 200
+          minimum: 4
+          nullable: true
+          title: Frecuencia respiratoria (rpm)
+        body_condition_score:
+          type: integer
+          maximum: 9
+          minimum: 1
+          nullable: true
+          title: Condición corporal (1-9)
+        mucous_membranes:
+          title: Mucosas
+          oneOf:
+          - $ref: '#/components/schemas/MucousMembranesEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        physical_exam:
+          type: string
+          title: Examen físico (O)
+          maxLength: 2000
+        diagnosis:
+          type: string
+          title: Diagnóstico (A)
+          maxLength: 1000
+        treatment:
+          type: string
+          title: Tratamiento / plan (P)
+          maxLength: 2000
+        manufacturer:
+          type: string
+          title: Laboratorio
+          maxLength: 80
+        lot_expires_on:
+          type: string
+          format: date
+          nullable: true
+          title: Vencimiento del lote
+        route:
+          title: Vía de administración
+          oneOf:
+          - $ref: '#/components/schemas/RouteEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        dose:
+          type: string
+          title: Dosis y frecuencia
+          maxLength: 120
         is_active:
           type: boolean
           title: Vigente
           description: 'Para alergias, patologías y fármacos: si sigue vigente.'
+        source_attachment:
+          type: string
+          format: uuid
+          nullable: true
         reason:
           type: string
           writeOnly: true
@@ -1314,6 +1779,16 @@ components:
       description: |-
         * `CONFIRMED` - Confirmado por el establecimiento
         * `PUBLIC_UNCONFIRMED` - Fuente pública no confirmada
+    KindEnum:
+      enum:
+      - VACCINE_LABEL
+      - CARD_SCAN
+      - OTHER
+      type: string
+      description: |-
+        * `VACCINE_LABEL` - Etiqueta de vacuna o producto
+        * `CARD_SCAN` - Foto del carnet
+        * `OTHER` - Otro respaldo
     LoginRequest:
       type: object
       properties:
@@ -1329,6 +1804,20 @@ components:
       required:
       - email
       - password
+    MucousMembranesEnum:
+      enum:
+      - PINK
+      - PALE
+      - CYANOTIC
+      - ICTERIC
+      - CONGESTED
+      type: string
+      description: |-
+        * `PINK` - Rosadas (normales)
+        * `PALE` - Pálidas
+        * `CYANOTIC` - Cianóticas
+        * `ICTERIC` - Ictéricas
+        * `CONGESTED` - Congestivas
     OpeningHour:
       type: object
       properties:
@@ -1642,6 +2131,22 @@ components:
         * `PROFESSIONAL` - Profesional veterinario
         * `CLINIC` - Veterinaria (establecimiento)
         * `ADMIN` - Administrador de PetTech
+    RouteEnum:
+      enum:
+      - SC
+      - IM
+      - ORAL
+      - INTRANASAL
+      - TOPICAL
+      - IV
+      type: string
+      description: |-
+        * `SC` - Subcutánea
+        * `IM` - Intramuscular
+        * `ORAL` - Oral
+        * `INTRANASAL` - Intranasal
+        * `TOPICAL` - Tópica
+        * `IV` - Intravenosa
     SexEnum:
       enum:
       - MALE

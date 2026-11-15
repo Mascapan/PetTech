@@ -24,6 +24,7 @@ class ClinicRepository(
                 emergency = filters.emergency.takeIf { it },
                 openNow = filters.openNow.takeIf { it },
                 service = filters.service,
+                network = filters.networkOnly.takeIf { it },
             )
             ClinicSearchResult(dto.results.map { it.toDomain() }, dto.disclaimer)
         }

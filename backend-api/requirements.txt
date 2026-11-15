@@ -15,3 +15,5 @@ argon2-cffi>=23.1
 # Producción (piloto): servidor WSGI y archivos estáticos del portal web
 gunicorn>=23,<24
 whitenoise>=6.8,<7
+# Fotografías de la ficha (etiqueta de vacuna, carnet): se re-codifican a JPEG y se elimina el EXIF (DEC-031)
+Pillow>=11,<12

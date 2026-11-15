@@ -152,14 +152,22 @@ class ClinicAndProfessionalFlowTests(PortalTestCase):
             "entry_type": "VACCINE", "title": "Antirrábica", "occurred_on": timezone.localdate().isoformat(),
             "next_due_on": "", "weight_kg": "", "lot_number": "L1", "notes": "",
         })
+        self.assertEqual(r.status_code, 400)  # ficha estandarizada: vacuna sin laboratorio se rechaza
+        self.assertContains(r, "Indica el laboratorio.", status_code=400)
+        r = self.client.post(reverse("portal:vet-record", args=[self.pet.public_code]), {
+            "entry_type": "VACCINE", "title": "Antirrábica", "occurred_on": timezone.localdate().isoformat(),
+            "lot_number": "L1", "manufacturer": "Lab Demo", "route": "SC",
+            "anamnesis": "no aplica a vacunas y se descarta",
+        })
         self.assertEqual(r.status_code, 302)
         entry = ClinicalEntry.objects.get(pet=self.pet)
         self.assertEqual((entry.origin, entry.clinic_name, entry.author_name), ("PROFESSIONAL", "Clínica Portal", "Dra. Portal"))
+        self.assertEqual((entry.manufacturer, entry.route, entry.anamnesis), ("Lab Demo", "SC", ""))
 
         # Corrección versionada desde el portal.
         r = self.client.post(reverse("portal:vet-correct", args=[self.pet.public_code, entry.pk]), {
             "entry_type": "VACCINE", "title": "Antirrábica (corregida)", "occurred_on": timezone.localdate().isoformat(),
-            "reason": "Error de digitación",
+            "lot_number": "L1", "manufacturer": "Lab Demo", "reason": "Error de digitación",
         })
         self.assertEqual(r.status_code, 302)
         self.assertEqual(ClinicalEntry.objects.filter(pet=self.pet).count(), 2)
@@ -196,7 +204,10 @@ class ClinicAndProfessionalFlowTests(PortalTestCase):
 
     def test_veterinaria_publica_su_horario(self):
         self.login(self.clinic_user)
-        data = {"phone": "+56 9 1111 1111", "attends_emergencies": "on", "services": ["GENERAL", "SURGERY"]}
+        data = {"name": "Clínica Renovada", "address": "Av. Libertad 100", "commune": "Chillán",
+                "latitude": "-36.6066", "longitude": "-72.1034", "contact_email": "hola@clinica.test",
+                "services_detail": "Dermatología\nEcografía abdominal",
+                "phone": "+56 9 1111 1111", "attends_emergencies": "on", "services": ["GENERAL", "SURGERY"]}
         for d in range(7):
             data[f"d{d}-open_day"] = "on" if d < 5 else ""
             data[f"d{d}-opens_at"] = "09:00" if d < 5 else ""
@@ -206,6 +217,8 @@ class ClinicAndProfessionalFlowTests(PortalTestCase):
         self.clinic.refresh_from_db()
         self.assertEqual(self.clinic.info_origin, Clinic.InfoOrigin.CONFIRMED)
         self.assertEqual(self.clinic.opening_hours.count(), 5)
+        self.assertEqual((self.clinic.name, self.clinic.services_detail), ("Clínica Renovada", "Dermatología\nEcografía abdominal"))
+        self.assertAlmostEqual(self.clinic.location.y, -36.6066)
         self.assertTrue(AuditEvent.objects.filter(action="CATALOG_UPDATED", clinic=self.clinic).exists())
 
     def test_horario_incompleto_es_rechazado(self):

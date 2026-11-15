@@ -1,0 +1,132 @@
+{% load static %}<!doctype html>
+<html lang="es-CL">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PetTech · La ficha de tu mascota, siempre contigo</title>
+<meta name="description" content="PetTech: carnet digital y ficha clínica de tu mascota, compartida con las veterinarias que tú autorizas. Encuentra veterinarias en Chillán y la Región de Ñuble.">
+<link rel="icon" href="{% static 'portal/logo.svg' %}">
+<link rel="stylesheet" href="{% static 'portal/landing.css' %}">
+</head>
+<body>
+<header class="nav">
+  <a class="brand" href="{% url 'landing' %}"><img src="{% static 'portal/logo.svg' %}" alt="">PetTech</a>
+  <nav>
+    <a href="#tutores">Tutores</a>
+    <a href="#veterinarias">Veterinarias</a>
+    <a href="#descarga">Descargar</a>
+    <a class="pill" href="{% url 'portal:login' %}">Ingreso veterinarias</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="hero-text">
+    <span class="eyebrow">Chillán · Región de Ñuble</span>
+    <h1>La ficha clínica de tu mascota, <em>siempre contigo</em>.</h1>
+    <p class="lead">PetTech reúne el carnet, las vacunas y los antecedentes de tu mascota en tu teléfono. Cuando vas a una
+      veterinaria de la red, <strong>tú decides</strong> si puede ver y completar su historial.</p>
+    <div class="cta">
+      {% if apk_url %}
+      <a class="btn primary" href="{{ apk_url }}" rel="noopener" download>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 21h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Descargar app Android</a>
+      {% else %}
+      <span class="btn primary disabled" aria-disabled="true">App Android · próximamente</span>
+      {% endif %}
+      <a class="btn ghost" href="{% url 'portal:login' %}">Soy veterinaria</a>
+    </div>
+    <p class="fine">{% if apk_url %}Versión {{ apk_version }} · APK gratuito para Android 9 o superior. {% endif %}Prototipo académico en etapa piloto.</p>
+  </div>
+  <div class="phone" aria-hidden="true">
+    <div class="screen">
+      <div class="bar">Mis mascotas</div>
+      <div class="pets">
+        <div class="pet"><div class="av">L</div><b>Luna</b><small>Perro</small></div>
+        <div class="pet"><div class="av c">M</div><b>Michi</b><small>Gato</small></div>
+      </div>
+      <div class="vac"><span class="dot ok"></span>Antirrábica · al día</div>
+      <div class="vac"><span class="dot warn"></span>Óctuple · refuerzo en 12 días</div>
+      <div class="req"><b>Solicitud de acceso</b><small>Veterinaria de la red quiere ver la ficha de Luna</small>
+        <div class="req-btns"><span>Rechazar</span><span class="ok">Autorizar</span></div></div>
+      <div class="find">📍 Buscar veterinaria</div>
+    </div>
+  </div>
+</section>
+
+<section class="strip">
+  <div><b>Tú decides</b><span>Cada acceso a la ficha requiere tu autorización y es temporal.</span></div>
+  <div><b>Todo queda registrado</b><span>Ves quién consultó o registró información, y cuándo.</span></div>
+  <div><b>{{ network_count }}</b><span>veterinaria{{ network_count|pluralize }} en la Red PetTech hoy.</span></div>
+</section>
+
+<section id="tutores" class="block">
+  <h2>Para tutores</h2>
+  <p class="section-lead">Deja de depender de un carnet de papel que se pierde o se moja.</p>
+  <div class="cards">
+    <article><div class="ico">🪪</div><h3>Carnet digital</h3><p>Identificación, código PetTech, vacunas, desparasitaciones, alergias y fármacos de cada mascota.</p></article>
+    <article><div class="ico">🩺</div><h3>Ficha clínica compartida</h3><p>Las atenciones que registran las veterinarias de la red llegan a tu app, con autor, fecha y establecimiento.</p></article>
+    <article><div class="ico">🗺️</div><h3>Veterinarias cercanas</h3><p>Mapa con tu ubicación, horario declarado, urgencias y servicios. Las de la Red PetTech aparecen destacadas.</p></article>
+    <article><div class="ico">🔔</div><h3>Próximas fechas</h3><p>Refuerzos de vacunas y controles pendientes a la vista, para no olvidar ninguno.</p></article>
+  </div>
+  <ol class="steps">
+    <li><b>Descarga la app</b> y crea tu cuenta.</li>
+    <li><b>Registra tu mascota</b>: obtendrás su código PetTech.</li>
+    <li><b>En la consulta</b>, entrega el código y autoriza el acceso desde tu teléfono.</li>
+  </ol>
+</section>
+
+<section id="veterinarias" class="block alt">
+  <div class="two">
+    <div>
+      <h2>Para veterinarias</h2>
+      <p class="section-lead">Súmate a la Red PetTech y atiende con el historial completo del paciente.</p>
+      <ul class="checks">
+        <li>Consulta antecedentes registrados por otras veterinarias de la red, con permiso del tutor.</li>
+        <li>Ficha clínica estandarizada: anamnesis, signos vitales, diagnóstico, tratamiento y vacunas con lote.</li>
+        <li>Publica tu horario, urgencias y servicios: los tutores te encuentran en el mapa.</li>
+        <li>Autoriza a tu equipo profesional y revisa indicadores de atención de tu establecimiento.</li>
+      </ul>
+      <div class="cta">
+        <a class="btn primary" href="{% url 'portal:login' %}">Ingresar al portal</a>
+        <a class="btn ghost" href="mailto:{{ contact_email }}?subject=Quiero%20unirme%20a%20la%20Red%20PetTech">Quiero unirme a la red</a>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">Ficha clínica · <span class="code">PT-XXXX-XXXX</span></div>
+      <div class="row"><span>Motivo</span><b>Control anual</b></div>
+      <div class="row"><span>T° · FC · FR</span><b>38,6 °C · 96 lpm · 24 rpm</b></div>
+      <div class="row"><span>Diagnóstico</span><b>Paciente sano</b></div>
+      <div class="row"><span>Vacuna</span><b>Antirrábica · lote ejemplo</b></div>
+      <div class="badge">✔ Acceso autorizado por el tutor · 24 h</div>
+      <small class="note">Datos de ejemplo.</small>
+    </div>
+  </div>
+</section>
+
+<section id="descarga" class="block">
+  <h2>Descarga e instalación</h2>
+  <div class="two">
+    <ol class="steps vertical">
+      <li>Desde tu teléfono Android, toca <b>Descargar app Android</b>.</li>
+      <li>Abre el archivo <code>PetTech.apk</code> descargado.</li>
+      <li>Si Android lo pide, permite <b>instalar apps de este origen</b> (solo para esta instalación).</li>
+      <li>Si aparece Play Protect, elige <b>Más detalles → Instalar de todas formas</b>: ocurre con apps que aún no están en Google Play.</li>
+    </ol>
+    <div class="dl-card">
+      {% if apk_url %}
+      <a class="btn primary big" href="{{ apk_url }}" rel="noopener" download>Descargar PetTech {{ apk_version }}</a>
+      {% else %}
+      <span class="btn primary big disabled">Descarga disponible pronto</span>
+      {% endif %}
+      <p class="fine">La primera conexión puede tardar hasta un minuto mientras el servidor del piloto se activa.</p>
+      <p class="fine"><a href="{% url 'public-privacy' %}">Política de privacidad</a> · <a href="{% url 'public-account-deletion' %}">Eliminar mi cuenta</a></p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="brand small"><img src="{% static 'portal/logo.svg' %}" alt="">PetTech</div>
+  <p>Prototipo académico — Proyecto de Título, Ingeniería en Informática, INACAP Chillán (2026).
+    PetTech no reemplaza la atención veterinaria. Contacto: <a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
+</footer>
+</body>
+</html>

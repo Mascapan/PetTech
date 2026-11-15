@@ -8,6 +8,8 @@ owner_urlpatterns = [
     path("entries/", views.OwnerEntryCreateView.as_view(), name="owner-entry-create"),
     path("entries/<uuid:entry_id>/correct/", views.OwnerEntryCorrectView.as_view(), name="owner-entry-correct"),
     path("entries/<uuid:entry_id>/history/", views.OwnerEntryHistoryView.as_view(), name="owner-entry-history"),
+    path("attachments/", views.OwnerAttachmentCreateView.as_view(), name="owner-attachment-create"),
+    path("attachments/<uuid:attachment_id>/", views.OwnerAttachmentView.as_view(), name="owner-attachment"),
 ]
 
 # Rutas del profesional (montadas bajo /api/v1/professional/).
@@ -18,4 +20,8 @@ professional_urlpatterns = [
          name="pro-entry-create"),
     path("pets/<str:code>/clinical-record/entries/<uuid:entry_id>/correct/",
          views.ProfessionalEntryCorrectView.as_view(), name="pro-entry-correct"),
+    path("pets/<str:code>/clinical-record/attachments/", views.ProfessionalAttachmentCreateView.as_view(),
+         name="pro-attachment-create"),
+    path("pets/<str:code>/clinical-record/attachments/<uuid:attachment_id>/",
+         views.ProfessionalAttachmentView.as_view(), name="pro-attachment"),
 ]

@@ -48,4 +48,9 @@ services:
         value: Administración PetTech
       - key: PETTECH_CONTACT_EMAIL
         sync: false          # correo de contacto que aparece en /privacidad/ y /eliminar-cuenta/
+      # Descarga del APK en la página pública (subir el APK firmado como "PetTech.apk" en GitHub Releases).
+      - key: PETTECH_APK_URL
+        value: https://github.com/Mascapan/PetTech/releases/latest/download/PetTech.apk
+      - key: PETTECH_APK_VERSION
+        value: "0.4.0"
       # El dominio público (RENDER_EXTERNAL_HOSTNAME) lo agrega Render automáticamente.

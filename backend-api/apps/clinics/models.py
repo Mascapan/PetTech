@@ -38,6 +38,8 @@ class Clinic(TimeStampedModel):
     address = models.CharField("dirección", max_length=200)
     commune = models.CharField("comuna", max_length=60, default="Chillán")
     phone = models.CharField("teléfono", max_length=20, blank=True)
+    contact_email = models.EmailField("correo de contacto", blank=True)
+    website = models.URLField("sitio web o red social", max_length=200, blank=True)
     # geography=True: distancias en metros sobre el elipsoide (WGS 84).
     location = gis_models.PointField("ubicación", geography=True, srid=4326)
     attends_emergencies = models.BooleanField("declara atender urgencias", default=False)
@@ -45,6 +47,18 @@ class Clinic(TimeStampedModel):
     services = models.JSONField(
         "servicios declarados", default=list, blank=True,
         help_text=f"Lista de códigos: {', '.join(Service.values)}",
+    )
+    services_detail = models.TextField(
+        "otros servicios (detalle)", max_length=1500, blank=True,
+        help_text="Texto libre con el detalle de servicios, especialidades o prestaciones adicionales.",
+    )
+    source_note = models.CharField(
+        "fuente del dato (directorio)", max_length=200, blank=True,
+        help_text="Para establecimientos no afiliados: de dónde se obtuvo la información pública (p. ej. OpenStreetMap).",
+    )
+    external_ref = models.CharField(
+        "referencia externa", max_length=40, blank=True, db_index=True,
+        help_text="Identificador en la fuente pública (p. ej. osm:node/123) para evitar duplicados al importar.",
     )
     info_origin = models.CharField(
         "origen de la información", max_length=20, choices=InfoOrigin.choices,
@@ -67,9 +81,18 @@ class Clinic(TimeStampedModel):
         verbose_name = "establecimiento veterinario"
         verbose_name_plural = "establecimientos veterinarios"
         ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(fields=["external_ref"], condition=~models.Q(external_ref=""),
+                                    name="clinics_external_ref_unique"),
+        ]
 
     def __str__(self) -> str:
         return self.name
+
+    @property
+    def in_pettech_network(self) -> bool:
+        """Afiliada a la Red PetTech: tiene cuenta en el portal y participa de la ficha compartida."""
+        return bool(self.is_active and self.accepts_pettech_records and self.account_id)
 
     def service_list(self) -> list[dict]:
         labels = dict(Service.choices)

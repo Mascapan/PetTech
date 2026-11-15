@@ -42,3 +42,9 @@ class ClinicRequiredMixin(LoginRequiredMixin):
             }, status=403)
         self.clinic = clinic
         return super().dispatch(request, *args, **kwargs)
+
+
+class PortalUserRequiredMixin(RoleRequiredMixin):
+    """Cualquier rol del portal (p. ej. para cambiar la propia contraseña)."""
+
+    allowed_roles = tuple(PORTAL_ROLES)

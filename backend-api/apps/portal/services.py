@@ -79,10 +79,18 @@ def set_professional_authorized(clinic: Clinic, actor, membership_id: int, autho
 @transaction.atomic
 def update_clinic_profile(clinic: Clinic, actor, data: dict, hours: dict[int, tuple[time, time] | None]) -> Clinic:
     """
-    La veterinaria actualiza ella misma su horario, urgencias y servicios (autogestión del catálogo).
+    La veterinaria actualiza ella misma sus datos, ubicación, contacto, horario, urgencias y servicios
+    (autogestión del catálogo).
     Al guardar, el dato queda "confirmado por el establecimiento" con la fecha actual (HU-09, HU-12).
     """
+    clinic.name = data["name"]
+    clinic.address = data["address"]
+    clinic.commune = data["commune"]
+    clinic.location = Point(data["longitude"], data["latitude"], srid=4326)
     clinic.phone = data.get("phone", "")
+    clinic.contact_email = data.get("contact_email", "")
+    clinic.website = data.get("website", "")
+    clinic.services_detail = data.get("services_detail", "")
     clinic.attends_emergencies = data.get("attends_emergencies", False)
     clinic.emergency_24h = data.get("emergency_24h", False)
     clinic.services = list(data.get("services", []))
@@ -95,4 +103,50 @@ def update_clinic_profile(clinic: Clinic, actor, data: dict, hours: dict[int, tu
         for day, slot in sorted(hours.items()) if slot is not None
     ])
     audit(actor, AuditEvent.Action.CATALOG_UPDATED, clinic=clinic, resource_id=clinic.pk)
+    return clinic
+
+
+@transaction.atomic
+def change_password(user: User, new_password: str) -> None:
+    """
+    Cambia la contraseña y cierra las sesiones de la app (tokens) del usuario: si alguien más
+    conocía la contraseña anterior, pierde el acceso. La sesión web actual se conserva en la vista.
+    """
+    from knox.models import AuthToken
+
+    user.set_password(new_password)
+    user.save(update_fields=["password"])
+    AuthToken.objects.filter(user=user).delete()
+    audit(user, AuditEvent.Action.PASSWORD_CHANGED, resource_id=user.pk)
+
+
+@transaction.atomic
+def create_directory_clinic(admin_user, data: dict) -> Clinic:
+    """Veterinaria NO afiliada: visible en la búsqueda como información pública no confirmada."""
+    clinic = Clinic.objects.create(
+        name=data["name"], address=data["address"], commune=data["commune"], phone=data.get("phone", ""),
+        website=data.get("website", ""), location=Point(data["longitude"], data["latitude"], srid=4326),
+        attends_emergencies=data.get("attends_emergencies", False), services=list(data.get("services", [])),
+        source_note=data["source_note"], info_origin=Clinic.InfoOrigin.PUBLIC_UNCONFIRMED,
+        verified_at=timezone.now(), accepts_pettech_records=False,
+    )
+    audit(admin_user, AuditEvent.Action.DIRECTORY_UPDATED, clinic=clinic, resource_id=clinic.pk)
+    return clinic
+
+
+@transaction.atomic
+def affiliate_clinic(admin_user, clinic: Clinic, data: dict) -> Clinic:
+    """
+    La veterinaria del directorio se une a la Red PetTech: se crea su cuenta y pasa a participar de la
+    ficha compartida. Desde ese momento la app la muestra con el distintivo "Red PetTech".
+    """
+    clinic = Clinic.objects.select_for_update().get(pk=clinic.pk)
+    if clinic.account_id:
+        raise PortalError("Esta veterinaria ya tiene una cuenta en el portal.")
+    clinic.account = _new_user(data["account_email"], data["account_name"], data["account_password"],
+                               User.Role.CLINIC)
+    clinic.accepts_pettech_records = True
+    clinic.is_active = True
+    clinic.save(update_fields=["account", "accepts_pettech_records", "is_active", "updated_at"])
+    audit(admin_user, AuditEvent.Action.CLINIC_AFFILIATED, clinic=clinic, resource_id=clinic.pk)
     return clinic

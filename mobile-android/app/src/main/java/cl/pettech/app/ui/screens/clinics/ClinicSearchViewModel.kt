@@ -98,6 +98,7 @@ class ClinicSearchViewModel(
 
     fun toggleOpenNow() = updateFilters { it.copy(openNow = !it.openNow) }
     fun toggleEmergency() = updateFilters { it.copy(emergency = !it.emergency) }
+    fun toggleNetworkOnly() = updateFilters { it.copy(networkOnly = !it.networkOnly) }
     fun setService(code: String?) = updateFilters { it.copy(service = code) }
     fun setRadius(km: Int) = updateFilters { it.copy(radiusKm = km) }
 

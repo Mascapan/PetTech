@@ -122,6 +122,30 @@ data class ClinicalEntryDto(
     @SerialName("created_at") val createdAt: String? = null,
     @SerialName("is_correction") val isCorrection: Boolean = false,
     @SerialName("correction_reason") val correctionReason: String = "",
+    // Ficha estructurada (SOAP) y producto aplicado: opcionales, los completa la veterinaria.
+    val anamnesis: String = "",
+    @SerialName("temperature_c") val temperatureC: Double? = null,
+    @SerialName("heart_rate_bpm") val heartRateBpm: Int? = null,
+    @SerialName("respiratory_rate_rpm") val respiratoryRateRpm: Int? = null,
+    @SerialName("body_condition_score") val bodyConditionScore: Int? = null,
+    @SerialName("physical_exam") val physicalExam: String = "",
+    val diagnosis: String = "",
+    val treatment: String = "",
+    val manufacturer: String = "",
+    @SerialName("lot_expires_on") val lotExpiresOn: String? = null,
+    val dose: String = "",
+    val attachments: List<AttachmentDto> = emptyList(),
+    @SerialName("source_attachment") val sourceAttachment: String? = null,
+)
+
+@Serializable
+data class AttachmentDto(
+    val id: String,
+    val kind: String,
+    @SerialName("kind_label") val kindLabel: String = "",
+    val origin: String = "",
+    @SerialName("author_name") val authorName: String = "",
+    @SerialName("created_at") val createdAt: String? = null,
 )
 
 /** Cuerpo para registrar o corregir un antecedente. [reason] solo se envía en correcciones. */
@@ -136,6 +160,8 @@ data class EntryWriteRequest(
     @SerialName("lot_number") val lotNumber: String,
     @SerialName("is_active") val isActive: Boolean,
     val reason: String? = null,
+    /** Foto del carnet de la que se transcribió (solo tutor, flujo OCR). No se envía si es null. */
+    @SerialName("source_attachment") val sourceAttachment: String? = null,
 )
 
 @Serializable
@@ -248,6 +274,11 @@ data class ClinicDto(
     @SerialName("verified_at") val verifiedAt: String? = null,
     @SerialName("is_stale") val isStale: Boolean = false,
     @SerialName("accepts_pettech_records") val acceptsPettechRecords: Boolean = false,
+    @SerialName("in_pettech_network") val inPettechNetwork: Boolean? = null,
+    @SerialName("contact_email") val contactEmail: String = "",
+    val website: String = "",
+    @SerialName("services_detail") val servicesDetail: String = "",
+    @SerialName("source_note") val sourceNote: String = "",
 )
 
 @Serializable

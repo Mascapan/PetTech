@@ -245,3 +245,41 @@ Render (256 bits); base sin acceso público (`ipAllowList: []`); la app espera h
 **Riesgos:** la base gratuita expira a los 30 días y no tiene respaldos (RNF-08 no se cumple en este plan) → mitigación:
 cambiar a plan pagado antes de la prueba cerrada; los datos de prueba deben poder recrearse desde el portal.
 **Alternativas descartadas:** servidor propio con túnel (no apto para Play), otra BD sin PostGIS (rompe HU-07).
+
+### DEC-029 — Directorio de veterinarias no afiliadas y distintivo "Red PetTech" (15-11-2026)
+**Solicitud:** mostrar las veterinarias de Chillán "con la información que hay en Google" y diferenciar las afiliadas.
+**Decisión:** NO se copian datos de Google Maps: sus Términos de Servicio prohíben extraer o almacenar su contenido
+(solo el `place_id`); sería un riesgo legal y ético ante la comisión. El directorio se forma con **OpenStreetMap**
+(licencia ODbL, con atribución, importación idempotente desde el portal) y con altas manuales cuya **fuente pública se
+declara** (sitio o redes del propio establecimiento). Estos registros se rotulan "Fuente pública no confirmada".
+Una veterinaria es **Red PetTech** cuando tiene cuenta en el portal y participa de la ficha compartida
+(`Clinic.in_pettech_network`). El administrador puede **afiliar** una veterinaria del directorio (crea su cuenta).
+La red se **distingue visualmente** (marcador y etiqueta) pero **no se privilegia en el orden** (abiertas y cercanía).
+**Alternativa descartada:** Google Places en tiempo real (requiere facturación con tarjeta).
+
+### DEC-030 — Mapa con OpenStreetMap (osmdroid) en vez de Maps SDK
+El mapa de Google exigía una clave con facturación habilitada; sin clave la app solo mostraba la lista. Se reemplaza
+por **osmdroid 6.1.20** (sin clave ni costo). Cumplimiento de la política de tiles de OSM: User-Agent propio
+(`cl.pettech.app/versión`), caché local y atribución "© OpenStreetMap" visible. Para un uso masivo futuro se debe
+contratar un proveedor de tiles; para el piloto el volumen es bajo. "Cómo llegar" sigue delegando en la app de mapas.
+
+### DEC-031 — Fotografías de la ficha guardadas en PostgreSQL
+Etiqueta de la vacuna (profesional desde el portal o tutor desde la app) y foto del carnet (tutor). Se guardan en la
+base (`Attachment`, `BinaryField`) porque el disco de Render gratuito es efímero y así heredan los mismos permisos,
+bitácora y respaldos que la ficha. Seguridad (OWASP File Upload): máx. 8 MB, se valida decodificando la imagen (no la
+extensión), se re-codifica a JPEG ≤ 1600 px y **se descartan los metadatos EXIF** (incluido GPS). Son evidencia: no se
+modifican; el tutor solo elimina fotos propias que no respalden antecedentes. Capacidad estimada: ~250 KB por foto
+→ la base gratuita de 1 GB admite miles de fotos en el piloto. Evolución: almacenamiento de objetos si crece.
+
+### DEC-032 — Transcripción asistida del carnet en papel (OCR en el dispositivo)
+**Solicitud del equipo:** fotografiar el carnet escrito y pasar su información a la app, guardando la foto.
+**Decisión:** ML Kit Text Recognition (modelo latino **incluido en la app**, sin Firebase ni envío de la foto a terceros
+para el OCR) + un **intérprete por reglas** (`CardTextParser`: filas por posición, fechas, diccionario de vacunas y
+antiparasitarios, lote). El resultado es una **propuesta editable**: nada se guarda sin confirmación del tutor. La foto
+se sube como respaldo y cada antecedente queda vinculado a ella (`source_attachment`), visible como "Transcrito desde
+el carnet". **Limitación declarada:** la letra manuscrita se reconoce con baja precisión; por eso el flujo prioriza la
+revisión humana y mide los campos corregidos (indicador de calidad para la defensa).
+**Relación con la regla "sin IA" (CLAUDE.md):** no es IA generativa ni toma decisiones clínicas; es un componente de
+reconocimiento de texto acotado a una necesidad concreta (usuarios que prefieren no digitar). Se registra como
+excepción justificada; debe validarse con el docente.
+Además se agrega la vista **"Ver como carnet"**, que replica el formato de tabla del carnet de papel.

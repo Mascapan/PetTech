@@ -76,6 +76,11 @@ class AuditEvent(models.Model):
         PROFESSIONAL_AUTHORIZED = "PROFESSIONAL_AUTHORIZED", "Autorizó a un profesional"
         PROFESSIONAL_SUSPENDED = "PROFESSIONAL_SUSPENDED", "Suspendió a un profesional"
         CLINIC_CREATED = "CLINIC_CREATED", "Creó una veterinaria"
+        PASSWORD_CHANGED = "PASSWORD_CHANGED", "Cambió su contraseña"
+        CLINIC_AFFILIATED = "CLINIC_AFFILIATED", "Afilió una veterinaria a la red"
+        DIRECTORY_UPDATED = "DIRECTORY_UPDATED", "Actualizó el directorio de veterinarias"
+        ATTACHMENT_ADDED = "ATTACHMENT_ADDED", "Adjuntó una fotografía a la ficha"
+        ATTACHMENT_READ = "ATTACHMENT_READ", "Vio una fotografía de la ficha"
 
     class Result(models.TextChoices):
         SUCCESS = "SUCCESS", "Permitido"

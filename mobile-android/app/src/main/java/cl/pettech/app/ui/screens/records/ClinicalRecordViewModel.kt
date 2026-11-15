@@ -6,6 +6,9 @@ import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import android.net.Uri
+import androidx.compose.ui.graphics.ImageBitmap
+import cl.pettech.app.data.local.PhotoTools
 import cl.pettech.app.data.repository.ClinicalRecordRepository
 import cl.pettech.app.domain.model.AppError
 import cl.pettech.app.domain.model.AppResult
@@ -35,6 +38,11 @@ data class ClinicalRecordUiState(
     val errorMessage: String? = null,
     /** El profesional perdió la autorización (expiró o fue revocada). */
     val accessLost: Boolean = false,
+    /** Fotos ya descargadas (id → imagen). */
+    val photos: Map<String, ImageBitmap> = emptyMap(),
+    /** Antecedente al que se está subiendo una foto. */
+    val uploadingEntryId: String? = null,
+    val photoMessage: String? = null,
 ) {
     /** Antecedentes visibles con el filtro por tipo (HU-04). */
     val visibleEntries: List<ClinicalEntry>
@@ -43,6 +51,7 @@ data class ClinicalRecordUiState(
 
 class ClinicalRecordViewModel(
     private val repository: ClinicalRecordRepository,
+    private val photoTools: PhotoTools,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -76,6 +85,48 @@ class ClinicalRecordViewModel(
 
     fun setFilter(type: EntryType?) = _ui.update { it.copy(filter = type) }
 
+    // ------------------------------------------------------------ Fotografías (DEC-031)
+
+    private val photosInFlight = mutableSetOf<String>()
+
+    /** El tutor puede respaldar con foto cualquier antecedente de su mascota (p. ej. la etiqueta de la vacuna). */
+    val canAddPhotos: Boolean get() = target is RecordTarget.Owner
+
+    fun newCaptureUri(): Uri = photoTools.newCaptureUri()
+
+    fun loadPhoto(attachmentId: String) {
+        if (attachmentId in _ui.value.photos || !photosInFlight.add(attachmentId)) return
+        viewModelScope.launch {
+            val result = repository.photoBytes(target, attachmentId)
+            photosInFlight.remove(attachmentId)
+            val image = (result as? AppResult.Success)?.data?.let { PhotoTools.toImageBitmap(it) } ?: return@launch
+            _ui.update { it.copy(photos = it.photos + (attachmentId to image)) }
+        }
+    }
+
+    fun addPhoto(entryId: String, uri: Uri) {
+        val owner = target as? RecordTarget.Owner ?: return
+        _ui.update { it.copy(uploadingEntryId = entryId, photoMessage = null) }
+        viewModelScope.launch {
+            val jpeg = photoTools.compressForUpload(uri)
+            if (jpeg == null) {
+                _ui.update { it.copy(uploadingEntryId = null, photoMessage = "No se pudo leer la imagen.") }
+                return@launch
+            }
+            when (val r = repository.uploadPhoto(owner.petId, jpeg, "VACCINE_LABEL", entryId)) {
+                is AppResult.Success -> {
+                    _ui.update { it.copy(uploadingEntryId = null, photoMessage = "Foto agregada a la ficha.") }
+                    load()
+                }
+                is AppResult.Failure -> _ui.update {
+                    it.copy(uploadingEntryId = null, photoMessage = r.error.message)
+                }
+            }
+        }
+    }
+
+    fun clearPhotoMessage() = _ui.update { it.copy(photoMessage = null) }
+
     /**
      * Quién puede corregir (la regla definitiva la aplica el servidor):
      * tutor → solo lo que él declaró; profesional → solo registros de su establecimiento (RN-14).
@@ -88,7 +139,10 @@ class ClinicalRecordViewModel(
 
     companion object {
         val Factory = viewModelFactory {
-            initializer { ClinicalRecordViewModel(appContainer().clinicalRecordRepository, createSavedStateHandle()) }
+            initializer {
+                val c = appContainer()
+                ClinicalRecordViewModel(c.clinicalRecordRepository, c.photoTools, createSavedStateHandle())
+            }
         }
     }
 }
