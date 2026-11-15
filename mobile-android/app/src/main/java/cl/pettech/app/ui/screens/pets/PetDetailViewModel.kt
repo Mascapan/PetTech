@@ -48,7 +48,7 @@ class PetDetailViewModel(
             when (val result = repository.get(petId)) {
                 is AppResult.Success -> {
                     _ui.update { it.copy(loading = false, pet = result.data) }
-                    photos.sync(petId, result.data.photoId)
+                    runCatching { photos.sync(petId, result.data.photoId) }
                 }
                 is AppResult.Failure -> _ui.update { it.copy(loading = false, errorMessage = result.error.message) }
             }

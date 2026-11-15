@@ -285,7 +285,7 @@ excepción justificada; debe validarse con el docente.
 Además se agrega la vista **"Ver como carnet"**, que replica el formato de tabla del carnet de papel.
 
 ### DEC-033 — Directorio inicial de Chillán, fotos de mascotas en la nube y registros desplegables (15-11-2026)
-- **Directorio:** se cargan 15 veterinarias de Chillán y Chillán Viejo (`apps/clinics/data/directorio_chillan.json`)
+- **Directorio:** se cargan 27 veterinarias (ampliado el 15-11-2026; incluye los centros veterinarios municipales de Chillán y Chillán Viejo) de Chillán y Chillán Viejo (`apps/clinics/data/directorio_chillan.json`)
   recopiladas de fuentes públicas (sitio oficial del Hospital Clínico Veterinario UdeC, Facebook/Instagram de las
   clínicas y directorios web como infoisinfo.cl, saludveterinaria.cl, veterianaria24horas.cl, tuveterinario.cl), con
   la fuente y fecha en cada registro; **no desde Google Maps**. Las coordenadas se obtuvieron con Nominatim

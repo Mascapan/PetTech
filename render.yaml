@@ -52,5 +52,5 @@ services:
       - key: PETTECH_APK_URL
         value: https://github.com/Mascapan/PetTech/releases/latest/download/PetTech.apk
       - key: PETTECH_APK_VERSION
-        value: "0.4.0"
+        value: "0.4.1"
       # El dominio público (RENDER_EXTERNAL_HOSTNAME) lo agrega Render automáticamente.

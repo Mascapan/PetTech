@@ -43,7 +43,7 @@ class TutorHomeViewModel(
                 is AppResult.Success -> {
                     _ui.update { it.copy(pets = result.data, loaded = true) }
                     // Fotos en la nube: invalida cachés y sube fotos locales antiguas (una vez).
-                    result.data.forEach { pet -> launch { photos.sync(pet.id, pet.photoId) } }
+                    result.data.forEach { pet -> launch { runCatching { photos.sync(pet.id, pet.photoId) } } }
                 }
                 is AppResult.Failure -> _ui.update { it.copy(errorMessage = result.error.message) }
             }

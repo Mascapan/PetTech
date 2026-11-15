@@ -56,8 +56,10 @@ class PetPhotoStore(
             } catch (e: Exception) {
                 null // 404 (sin foto) o sin conexión: se muestra la inicial.
             } ?: return@withContext null
-            dir.mkdirs()
-            file.writeBytes(bytes)
+            runCatching {
+                dir.mkdirs()
+                file.writeBytes(bytes)
+            }.getOrElse { return@withContext decode(bytes) }
         }
         runCatching { BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap() }.getOrNull()
     }
@@ -67,24 +69,32 @@ class PetPhotoStore(
      * descarta la caché si cambió y sube la foto local antigua si el servidor aún no tiene una.
      */
     suspend fun sync(petId: String, serverPhotoId: String?) = withContext(Dispatchers.IO) {
-        val file = fileFor(petId) ?: return@withContext
-        val idFile = idFileFor(petId) ?: return@withContext
-        val cachedId = idFile.takeIf { it.exists() }?.readText()
-        when {
-            serverPhotoId == null && file.exists() && cachedId == null -> {
-                // Foto de la versión anterior de la app (solo en este teléfono): se sube una vez.
-                upload(petId, file.readBytes())
+        // Nunca debe cerrar la app: cualquier error de archivos o red se ignora y se reintenta en la próxima carga.
+        try {
+            val file = fileFor(petId) ?: return@withContext
+            val idFile = idFileFor(petId) ?: return@withContext
+            dir.mkdirs() // tras reinstalar la app la carpeta aún no existe
+            val cachedId = idFile.takeIf { it.exists() }?.readText()
+            when {
+                serverPhotoId == null && file.exists() && cachedId == null -> {
+                    // Foto de la versión anterior de la app (solo en este teléfono): se sube una vez.
+                    upload(petId, file.readBytes())
+                }
+                serverPhotoId != null && serverPhotoId != cachedId -> {
+                    file.delete()
+                    idFile.writeText(serverPhotoId)
+                    _version.value += 1
+                }
+                serverPhotoId == null && cachedId != null -> {
+                    file.delete()
+                    idFile.delete()
+                    _version.value += 1
+                }
             }
-            serverPhotoId != null && serverPhotoId != cachedId -> {
-                file.delete()
-                idFile.writeText(serverPhotoId)
-                _version.value += 1
-            }
-            serverPhotoId == null && cachedId != null -> {
-                file.delete()
-                idFile.delete()
-                _version.value += 1
-            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Sin efecto: la foto se descargará al mostrarla.
         }
     }
 
@@ -123,10 +133,15 @@ class PetPhotoStore(
                 // Sin conexión: se limpia la caché local igualmente.
             }
         }
-        fileFor(petId)?.delete()
-        idFileFor(petId)?.delete()
+        runCatching {
+            fileFor(petId)?.delete()
+            idFileFor(petId)?.delete()
+        }
         _version.value += 1
     }
+
+    private fun decode(bytes: ByteArray): ImageBitmap? =
+        runCatching { BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap() }.getOrNull()
 
     private companion object {
         val UUID_REGEX = Regex("^[0-9a-fA-F-]{36}$")

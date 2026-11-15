@@ -16,7 +16,7 @@ ficha estructurada, red PetTech en el mapa, fotografías y transcripción del ca
 | Fotos: etiqueta de vacuna (portal y app), normalizadas sin EXIF, en PostgreSQL | API + portal + app | ✅ API/portal con pruebas · 🟡 app sin compilar |
 | Transcripción asistida del carnet (OCR ML Kit en el teléfono + revisión) y vista "Ver como carnet" | App | 🟡 intérprete verificado (5 casos) · app sin compilar |
 
-| Directorio inicial de 15 veterinarias de Chillán/Chillán Viejo (fuentes públicas, carga automática al desplegar) | `load_directory` | ✅ pruebas |
+| Directorio inicial de 27 veterinarias de Chillán/Chillán Viejo (fuentes públicas, carga automática al desplegar) | `load_directory` | ✅ pruebas |
 | Foto de la mascota en el servidor (con caché y migración de fotos locales) | API `pets/{id}/photo/` + app | ✅ API con pruebas · 🟡 app sin compilar |
 | Registros de la ficha desplegables con todo el detalle, miniatura y foto del carnet de origen | App | 🟡 sin compilar |
 | Recordatorios de vacunas/controles: 7 días antes, diario, 09:00–21:00 (HU-06, WorkManager) | App | 🟡 reglas verificadas (`ReminderPolicyTest`) · app sin compilar |
