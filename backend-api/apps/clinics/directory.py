@@ -124,3 +124,56 @@ def import_osm(elements: list[dict], default_commune: str = "Chillán") -> dict:
                 for d, ranges in hours[0].items() for o, c in ranges
             ])
     return stats
+
+
+CURATED_FILE = __import__("pathlib").Path(__file__).resolve().parent / "data" / "directorio_chillan.json"
+
+
+@transaction.atomic
+def load_curated(path=None) -> dict:
+    """
+    Carga el directorio recopilado por el equipo desde fuentes públicas (data/directorio_chillan.json).
+    Idempotente (por 'ref'). No modifica establecimientos afiliados ni datos ya confirmados por la veterinaria.
+    """
+    import json
+
+    payload = json.loads((path or CURATED_FILE).read_text(encoding="utf-8"))
+    consulted = payload.get("consultado", "")
+    stats = {"created": 0, "updated": 0, "skipped": 0}
+    now = timezone.now()
+    for item in payload["veterinarias"]:
+        clinic = Clinic.objects.filter(external_ref=item["ref"]).first()
+        if clinic is None and Clinic.objects.filter(name__iexact=item["nombre"]).exists():
+            stats["skipped"] += 1
+            continue
+        if clinic is not None and (clinic.account_id or clinic.info_origin == Clinic.InfoOrigin.CONFIRMED):
+            stats["skipped"] += 1
+            continue
+        hours = parse_opening_hours(item.get("horario", ""))
+        detail = item.get("detalle", "")
+        if item.get("ubicacion_aprox"):
+            detail += " Ubicación en el mapa aproximada (calle)."
+        data = dict(
+            name=item["nombre"][:120], address=item["direccion"][:200], commune=item.get("comuna", "Chillán")[:60],
+            phone=item.get("telefono", "")[:20], contact_email=item.get("email", ""), website=item.get("web", "")[:200],
+            location=Point(float(item["lng"]), float(item["lat"]), srid=4326),
+            attends_emergencies=bool(item.get("urgencias")), emergency_24h=bool(item.get("urgencias_24h")),
+            services=list(item.get("servicios", [])), services_detail=detail.strip()[:1500],
+            source_note=f"{item.get('fuente', 'Fuente pública')} · consultado {consulted}"[:200],
+            info_origin=Clinic.InfoOrigin.PUBLIC_UNCONFIRMED, verified_at=now, accepts_pettech_records=False,
+        )
+        if clinic is None:
+            clinic = Clinic.objects.create(external_ref=item["ref"], **data)
+            stats["created"] += 1
+        else:
+            for k, v in data.items():
+                setattr(clinic, k, v)
+            clinic.save()
+            stats["updated"] += 1
+        clinic.opening_hours.all().delete()
+        if hours is not None:
+            OpeningHour.objects.bulk_create([
+                OpeningHour(clinic=clinic, weekday=d, opens_at=o, closes_at=c)
+                for d, ranges in hours[0].items() for o, c in ranges
+            ])
+    return stats

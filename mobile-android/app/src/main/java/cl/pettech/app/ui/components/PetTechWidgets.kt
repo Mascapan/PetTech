@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import cl.pettech.app.PetTechApp
 
 /**
- * Foto de la mascota (guardada solo en este teléfono) o, si no hay, su inicial.
+ * Foto de la mascota (guardada en el servidor, con caché en el teléfono) o, si no hay, su inicial.
  * [petId] nulo = vista del profesional, que no recibe fotos.
  */
 @Composable

@@ -46,7 +46,10 @@ class PetDetailViewModel(
         _ui.update { it.copy(loading = true, errorMessage = null) }
         viewModelScope.launch {
             when (val result = repository.get(petId)) {
-                is AppResult.Success -> _ui.update { it.copy(loading = false, pet = result.data) }
+                is AppResult.Success -> {
+                    _ui.update { it.copy(loading = false, pet = result.data) }
+                    photos.sync(petId, result.data.photoId)
+                }
                 is AppResult.Failure -> _ui.update { it.copy(loading = false, errorMessage = result.error.message) }
             }
             val grants = (access.list(AccessStatus.APPROVED, petId) as? AppResult.Success)?.data?.size ?: 0
@@ -56,8 +59,11 @@ class PetDetailViewModel(
 
     fun savePhoto(uri: Uri) {
         viewModelScope.launch {
+            _ui.update { it.copy(photoMessage = "Subiendo foto…") }
             val ok = photos.save(petId, uri)
-            _ui.update { it.copy(photoMessage = if (ok) null else "No se pudo usar esa imagen. Prueba con otra.") }
+            _ui.update {
+                it.copy(photoMessage = if (ok) null else "No se pudo subir la foto. Revisa tu conexión o prueba con otra imagen.")
+            }
         }
     }
 
@@ -67,7 +73,7 @@ class PetDetailViewModel(
         viewModelScope.launch {
             when (val result = repository.delete(petId)) {
                 is AppResult.Success -> {
-                    photos.delete(petId)
+                    photos.delete(petId, remote = false) // el servidor ya eliminó sus fotos
                     _ui.update { it.copy(deleting = false, deleted = true) }
                 }
                 // 409: la mascota tiene registros de veterinarias (no se eliminan; ver DEC-009).

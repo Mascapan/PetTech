@@ -18,6 +18,7 @@ class PetSerializer(serializers.ModelSerializer):
 
     species_label = serializers.CharField(source="get_species_display", read_only=True)
     sex_label = serializers.CharField(source="get_sex_display", read_only=True)
+    photo_id = serializers.SerializerMethodField(help_text="Foto de perfil en el servidor (null si no tiene).")
     data_origin = serializers.SerializerMethodField(
         help_text="Origen de los datos del perfil: siempre declarados por el tutor."
     )
@@ -38,6 +39,7 @@ class PetSerializer(serializers.ModelSerializer):
             "microchip_number",
             "general_notes",
             "data_origin",
+            "photo_id",
             "created_at",
             "updated_at",
         ]
@@ -48,6 +50,10 @@ class PetSerializer(serializers.ModelSerializer):
             "microchip_number": {"required": False},
             "general_notes": {"required": False},
         }
+
+    def get_photo_id(self, obj) -> str | None:
+        att = obj.attachments.filter(kind="PET_PHOTO").order_by("-created_at").values_list("pk", flat=True).first()
+        return str(att) if att else None
 
     def get_data_origin(self, obj) -> str:
         return "OWNER_DECLARED"

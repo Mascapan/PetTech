@@ -58,6 +58,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.pettech.app.domain.model.Pet
 import cl.pettech.app.domain.validation.Validators
 import cl.pettech.app.ui.components.ErrorBanner
+import cl.pettech.app.ui.components.InfoBanner
 import cl.pettech.app.ui.components.FullScreenLoading
 import cl.pettech.app.ui.components.InfoRow
 import cl.pettech.app.ui.components.PetAvatar
@@ -137,7 +138,7 @@ fun PetDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 ui.errorMessage?.let { ErrorBanner(it) }
-                ui.photoMessage?.let { ErrorBanner(it) }
+                ui.photoMessage?.let { if (it.startsWith("Subiendo")) InfoBanner(it) else ErrorBanner(it) }
 
                 GeneralInfoCard(
                     pet = pet,
@@ -229,7 +230,7 @@ private fun GeneralInfoCard(pet: Pet, onChangePhoto: () -> Unit) {
             InfoRow("Microchip (declarado)", pet.microchipNumber.ifBlank { "No informado" })
             if (pet.generalNotes.isNotBlank()) InfoRow("Antecedentes generales", pet.generalNotes)
             Text(
-                "Datos declarados por el tutor. La foto se guarda solo en este teléfono.",
+                "Datos declarados por el tutor. La foto se guarda en tu cuenta y la ven las veterinarias que autorices.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp),

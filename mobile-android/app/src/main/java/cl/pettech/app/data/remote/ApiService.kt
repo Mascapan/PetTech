@@ -9,6 +9,7 @@ import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.PATCH
+import retrofit2.http.PUT
 import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
@@ -59,6 +60,17 @@ interface ApiService {
     suspend fun confirmPasswordReset(@Body body: PasswordResetConfirmRequest): MessageDto
 
     // ---------- Ficha clínica: tutor (titular) ----------
+
+    // Foto de perfil de la mascota en el servidor (DEC-031)
+    @GET("pets/{id}/photo/")
+    suspend fun petPhoto(@Path("id") petId: String): ResponseBody
+
+    @Multipart
+    @PUT("pets/{id}/photo/")
+    suspend fun uploadPetPhoto(@Path("id") petId: String, @Part file: MultipartBody.Part): PetPhotoDto
+
+    @DELETE("pets/{id}/photo/")
+    suspend fun deletePetPhoto(@Path("id") petId: String): Response<Unit>
 
     @GET("pets/{id}/clinical-record/")
     suspend fun ownerRecord(@Path("id") petId: String, @Query("type") type: String? = null): ClinicalRecordDto

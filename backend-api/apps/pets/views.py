@@ -3,10 +3,17 @@ import logging
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from django.db import transaction
 from rest_framework import viewsets
+from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.generics import get_object_or_404
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.core.exceptions import Conflict
 from apps.core.permissions import IsTutor
+
+from apps.clinical_records.models import Attachment
 
 from .models import Pet
 from .serializers import PetSerializer
@@ -61,9 +68,65 @@ class PetViewSet(viewsets.ModelViewSet):
                 "Escríbenos para gestionar la solicitud."
             )
         with transaction.atomic():
+            # Orden por las referencias protegidas: fotos de antecedentes → antecedentes → fotos sueltas.
+            Attachment.objects.filter(pet=instance, entry__isnull=False).delete()
             # Primero las correcciones (dependen de la versión anterior), luego el resto.
             for entry in entries.filter(corrects__isnull=False).order_by("-created_at"):
                 entry.delete()
             entries.all().delete()
+            Attachment.objects.filter(pet=instance).delete()
             instance.delete()
         logger.info("Mascota eliminada pet_id=%s owner_id=%s", pet_id, self.request.user.pk)
+
+
+class PetPhotoView(APIView):
+    """
+    Foto de perfil de la mascota guardada en el servidor (DEC-031): no se pierde al cambiar de teléfono y
+    la ve el profesional autorizado. Se normaliza (JPEG, sin EXIF/GPS) igual que las fotos de la ficha.
+    """
+
+    permission_classes = [IsAuthenticated, IsTutor]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def _pet(self, request, pk):
+        return get_object_or_404(Pet, pk=pk, owner=request.user)
+
+    @extend_schema(tags=["pets"], summary="Ver la foto de la mascota (JPEG)", responses={(200, "image/jpeg"): bytes})
+    def get(self, request, pk):
+        from apps.clinical_records.views import image_response
+
+        att = photo_of(self._pet(request, pk))
+        if att is None:
+            raise NotFound("La mascota no tiene foto.")
+        return image_response(att)
+
+    @extend_schema(tags=["pets"], summary="Subir o reemplazar la foto de la mascota",
+                   request={"multipart/form-data": {"type": "object", "properties": {"file": {"type": "string",
+                                                                                              "format": "binary"}}}},
+                   responses={200: dict})
+    def put(self, request, pk):
+        from apps.clinical_records import services as records
+
+        pet = self._pet(request, pk)
+        upload = request.FILES.get("file")
+        if upload is None:
+            raise ValidationError({"file": ["Adjunta una imagen."]})
+        with transaction.atomic():
+            previous = list(Attachment.objects.filter(pet=pet, kind=Attachment.Kind.PET_PHOTO))
+            for att in previous:
+                att.delete()
+            att = records.add_attachment(request.user, pet, upload, "PET_PHOTO")
+        return Response({"photo_id": str(att.pk)})
+
+    post = put
+
+    @extend_schema(tags=["pets"], summary="Quitar la foto de la mascota", responses={204: None})
+    def delete(self, request, pk):
+        Attachment.objects.filter(pet=self._pet(request, pk), kind=Attachment.Kind.PET_PHOTO).delete()
+        return Response(status=204)
+
+
+
+def photo_of(pet):
+    """Foto de perfil vigente (sin cargar el contenido binario)."""
+    return Attachment.objects.filter(pet=pet, kind=Attachment.Kind.PET_PHOTO).defer("content").order_by("-created_at").first()

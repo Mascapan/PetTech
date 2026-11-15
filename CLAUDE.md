@@ -19,7 +19,7 @@ Android nativo (Kotlin) → API REST Django + DRF + GeoDjango (monolito modular)
   telemedicina, marketplace, iOS. Excepción documentada: OCR en el dispositivo (ML Kit, sin Firebase) solo para
   proponer la transcripción del carnet, siempre con confirmación del tutor (DEC-032).
 - Mapa con OpenStreetMap (osmdroid, sin clave; DEC-030). Datos de Google Maps: no se copian (DEC-029).
-  WorkManager solo cuando se implemente HU-06.
+  WorkManager implementado para HU-06 (recordatorios locales, sin push/Firebase; DEC-034).
 - La app móvil sigue el boceto del equipo (DEC-019): login → Mis mascotas → ficha de mascota → ficha clínica; Buscar veterinaria.
 
 ## Módulos del backend (`backend-api/apps/`)

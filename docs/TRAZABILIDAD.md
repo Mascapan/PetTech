@@ -71,8 +71,8 @@ Total backend: **91 pruebas automatizadas, 91 OK** (PostgreSQL 16 + PostGIS 3.4,
 | Requisito | Situación | Próximo paso |
 |---|---|---|
 | HU-14 → **Pase clínico de emergencia** (QR / enlace firmado temporal) | Recomendado como *Must* en la retroalimentación escrita (28-10-2026); no implementado | Decidir en el Informe 2 (ver DEC-024) |
-| HU-05 adjuntos (foto del carnet de vacunas) | ✅ Incremento 4: fotos en PostgreSQL (DEC-031) y transcripción asistida (DEC-032) | Medir % de campos corregidos en el piloto |
-| HU-06 recordatorios | ⏳ | WorkManager con `next_due_on` |
+| HU-05 adjuntos (foto del carnet, etiqueta y foto de la mascota) | ✅ Incremento 4: fotos en PostgreSQL (DEC-031) y transcripción asistida (DEC-032) | Medir % de campos corregidos en el piloto |
+| HU-06 recordatorios | ✅ Incremento 4: WorkManager + notificaciones locales (DEC-034) | Medir avisos entregados en el piloto |
 | HU-13 eliminación de cuenta | por decidir (DEC-009) | según opción aprobada |
 | Cápsulas de salud preventiva por especie/etapa | Recomendación del profesor; no implementado | Evaluar como *Should* (Django Admin + lista en la app) |
 | RNF-04, RNF-08, NS-01 | 5 (piloto) | medición en entorno desplegado |

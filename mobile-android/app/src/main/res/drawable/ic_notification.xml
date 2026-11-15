@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ícono monocromo para la barra de notificaciones (huella). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="96" android:viewportHeight="96">
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M48,50C58,50 66,58 66,66C66,73 60,76 54,74C51,73 50,72 48,72C46,72 45,73 42,74C36,76 30,73 30,66C30,58 38,50 48,50Z"/>
+    <path android:fillColor="#FFFFFFFF" android:pathData="M24,40 a6,7 0 1,0 12,0 a6,7 0 1,0 -12,0 M35,31 a6,7 0 1,0 12,0 a6,7 0 1,0 -12,0 M49,31 a6,7 0 1,0 12,0 a6,7 0 1,0 -12,0 M60,40 a6,7 0 1,0 12,0 a6,7 0 1,0 -12,0"/>
+</vector>

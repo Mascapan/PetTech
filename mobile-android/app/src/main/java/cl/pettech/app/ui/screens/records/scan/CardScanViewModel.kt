@@ -184,7 +184,11 @@ class CardScanViewModel(
             for (row in selected) {
                 val form = EntryForm(
                     type = row.type, title = row.title.trim(), occurredOn = row.occurredDate()!!,
-                    nextDueOn = row.nextDate(), notes = "Transcrito desde la foto del carnet y revisado por el tutor.",
+                    nextDueOn = row.nextDate(),
+                    notes = buildString {
+                        append("Transcrito desde la foto del carnet y revisado por el tutor.")
+                        if (row.sourceText.isNotBlank()) append("\nTexto leído en el carnet: «${row.sourceText.take(500)}»")
+                    },
                     weightKg = null, lotNumber = row.lotNumber.trim(), isActive = true, sourceAttachmentId = attachmentId,
                 )
                 when (val r = repository.create(RecordTarget.Owner(petId), form)) {

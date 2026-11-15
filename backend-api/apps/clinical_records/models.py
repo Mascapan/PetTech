@@ -151,6 +151,7 @@ class Attachment(models.Model):
     class Kind(models.TextChoices):
         VACCINE_LABEL = "VACCINE_LABEL", "Etiqueta de vacuna o producto"
         CARD_SCAN = "CARD_SCAN", "Foto del carnet"
+        PET_PHOTO = "PET_PHOTO", "Foto de perfil de la mascota"
         OTHER = "OTHER", "Otro respaldo"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

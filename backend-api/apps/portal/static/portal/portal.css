@@ -98,3 +98,4 @@ body{background:linear-gradient(180deg,#f3f9f8 0,#f6faf9 240px)}
 .photo-thumb{width:120px;height:90px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
 @media (max-width:900px){.g4{grid-template-columns:1fr 1fr}}
 .pre{background:var(--mist);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:13px;overflow:auto}
+.pet-avatar{width:64px;height:64px;border-radius:16px;object-fit:cover;border:2px solid var(--teal-100);margin-right:12px}

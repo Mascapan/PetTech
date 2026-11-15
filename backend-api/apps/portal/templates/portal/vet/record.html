@@ -1,7 +1,7 @@
 {% extends "portal/base.html" %}{% load portal_extras %}{% block title %}Ficha clínica {{ pet.public_code }}{% endblock %}
 {% block content %}
-<div class="top"><div><h1>{{ pet.name }} <span class="code" style="font-size:18px">{{ pet.public_code }}</span></h1>
-<p class="sub">{{ pet.species_label }}{% if pet.breed %} · {{ pet.breed }}{% endif %} · {{ pet.sex_label }}{% if pet.birth_date %} · nacimiento {{ pet.birth_date }}{% if pet.birth_date_is_estimated %} (aprox.){% endif %}{% endif %}</p></div>
+<div class="top"><div class="inline">{% if pet.photo_id %}<img class="pet-avatar" src="{% url 'portal:vet-attachment' pet.public_code pet.photo_id %}" alt="Foto de {{ pet.name }}">{% endif %}<div><h1>{{ pet.name }} <span class="code" style="font-size:18px">{{ pet.public_code }}</span></h1>
+<p class="sub">{{ pet.species_label }}{% if pet.breed %} · {{ pet.breed }}{% endif %} · {{ pet.sex_label }}{% if pet.birth_date %} · nacimiento {{ pet.birth_date }}{% if pet.birth_date_is_estimated %} (aprox.){% endif %}{% endif %}</p></div></div>
 <a class="btn ghost" href="{% url 'portal:vet-home' %}">← Mis solicitudes</a></div>
 <div class="msg info">Acceso autorizado por el tutor para <strong>{{ membership.clinic.name }}</strong>{% if grant %} hasta {{ grant.expires_at|date:"d-m-Y H:i" }}{% endif %}. Esta consulta quedó registrada en la bitácora que ve el tutor.</div>
 <div class="grid">

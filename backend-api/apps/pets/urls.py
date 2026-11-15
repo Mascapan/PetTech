@@ -1,8 +1,13 @@
 from rest_framework.routers import SimpleRouter
 
-from .views import PetViewSet
+from django.urls import path
+
+from .views import PetPhotoView, PetViewSet
 
 router = SimpleRouter()
 router.register("", PetViewSet, basename="pet")
 
-urlpatterns = router.urls
+urlpatterns = [
+    path("<uuid:pk>/photo/", PetPhotoView.as_view(), name="pet-photo"),
+    *router.urls,
+]

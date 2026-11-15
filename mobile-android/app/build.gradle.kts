@@ -107,6 +107,8 @@ dependencies {
     implementation(libs.play.services.location)
     // Mapa OpenStreetMap (sin clave ni facturación; atribución obligatoria, DEC-030)
     implementation(libs.osmdroid.android)
+    // Recordatorios diarios de vacunas (HU-06)
+    implementation(libs.androidx.work.runtime)
     // OCR del carnet en papel, en el dispositivo (DEC-032)
     implementation(libs.mlkit.text.recognition)
 

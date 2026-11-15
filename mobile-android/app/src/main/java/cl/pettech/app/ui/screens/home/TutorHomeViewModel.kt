@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import cl.pettech.app.data.local.PetPhotoStore
 import cl.pettech.app.data.repository.AccessRepository
 import cl.pettech.app.data.repository.PetRepository
 import cl.pettech.app.domain.model.AccessStatus
@@ -29,6 +30,7 @@ data class TutorHomeUiState(
 class TutorHomeViewModel(
     private val pets: PetRepository,
     private val access: AccessRepository,
+    private val photos: PetPhotoStore,
 ) : ViewModel() {
     private val _ui = MutableStateFlow(TutorHomeUiState())
     val ui: StateFlow<TutorHomeUiState> = _ui.asStateFlow()
@@ -38,7 +40,11 @@ class TutorHomeViewModel(
         viewModelScope.launch {
             val pending = async { access.list(AccessStatus.PENDING) }
             when (val result = pets.list()) {
-                is AppResult.Success -> _ui.update { it.copy(pets = result.data, loaded = true) }
+                is AppResult.Success -> {
+                    _ui.update { it.copy(pets = result.data, loaded = true) }
+                    // Fotos en la nube: invalida cachés y sube fotos locales antiguas (una vez).
+                    result.data.forEach { pet -> launch { photos.sync(pet.id, pet.photoId) } }
+                }
                 is AppResult.Failure -> _ui.update { it.copy(errorMessage = result.error.message) }
             }
             val count = (pending.await() as? AppResult.Success)?.data?.size ?: 0
@@ -50,7 +56,7 @@ class TutorHomeViewModel(
         val Factory = viewModelFactory {
             initializer {
                 val c = appContainer()
-                TutorHomeViewModel(c.petRepository, c.accessRepository)
+                TutorHomeViewModel(c.petRepository, c.accessRepository, c.petPhotoStore)
             }
         }
     }

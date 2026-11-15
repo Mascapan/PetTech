@@ -52,7 +52,11 @@ data class PetDto(
     @SerialName("microchip_number") val microchipNumber: String = "",
     @SerialName("general_notes") val generalNotes: String = "",
     @SerialName("data_origin") val dataOrigin: String = "OWNER_DECLARED",
+    @SerialName("photo_id") val photoId: String? = null,
 )
+
+@Serializable
+data class PetPhotoDto(@SerialName("photo_id") val photoId: String)
 
 @Serializable
 data class PetWriteRequest(

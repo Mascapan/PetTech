@@ -206,7 +206,7 @@ PORTAL_LOGIN_MAX_ATTEMPTS = env.int("PORTAL_LOGIN_MAX_ATTEMPTS", default=8)
 # Descarga del APK desde la página pública (p. ej. GitHub Releases). Vacío = "próximamente".
 PETTECH_APK_URL = env("PETTECH_APK_URL", default="")
 PETTECH_APK_VERSION = env("PETTECH_APK_VERSION", default="0.4.0")
-PETTECH_PRIVACY_POLICY_VERSION = env("PRIVACY_POLICY_VERSION", default="2026-11-borrador")
+PETTECH_PRIVACY_POLICY_VERSION = env("PRIVACY_POLICY_VERSION", default="2026-11-15-borrador")
 
 # Documentación OpenAPI (RNF-07).
 SPECTACULAR_SETTINGS = {

@@ -114,8 +114,20 @@ class ClinicSearchViewModel(
         _ui.update { it.copy(loading = true, errorMessage = null) }
         searchJob = viewModelScope.launch {
             when (val r = repository.search(point.latitude, point.longitude, state.filters)) {
-                is AppResult.Success -> _ui.update {
-                    it.copy(loading = false, clinics = r.data.clinics, disclaimer = r.data.disclaimer, searched = true)
+                is AppResult.Success -> {
+                    _ui.update {
+                        it.copy(loading = false, clinics = r.data.clinics, disclaimer = r.data.disclaimer, searched = true)
+                    }
+                    // El piloto cubre Chillán/Ñuble: si la ubicación está lejos (p. ej. el emulador, que por defecto
+                    // está en EE. UU.) y no hay resultados, se muestran las veterinarias desde el centro de Chillán.
+                    if (r.data.clinics.isEmpty() && state.origin != SearchOrigin.CHILLAN &&
+                        distanceKm(point, LocationProvider.CHILLAN_CENTER) > FAR_FROM_PILOT_KM
+                    ) {
+                        useChillan(
+                            "Tu ubicación está fuera de la zona del piloto (Chillán y Ñuble): " +
+                                "te mostramos las veterinarias desde el centro de Chillán.",
+                        )
+                    }
                 }
                 is AppResult.Failure -> _ui.update { it.copy(loading = false, errorMessage = r.error.message) }
             }
@@ -123,6 +135,19 @@ class ClinicSearchViewModel(
     }
 
     companion object {
+        private const val FAR_FROM_PILOT_KM = 40.0
+
+        /** Distancia aproximada (haversine) en km. */
+        fun distanceKm(a: GeoPoint, b: GeoPoint): Double {
+            val r = 6371.0
+            val dLat = Math.toRadians(b.latitude - a.latitude)
+            val dLng = Math.toRadians(b.longitude - a.longitude)
+            val h = Math.sin(dLat / 2).let { it * it } +
+                Math.cos(Math.toRadians(a.latitude)) * Math.cos(Math.toRadians(b.latitude)) *
+                Math.sin(dLng / 2).let { it * it }
+            return 2 * r * Math.asin(Math.sqrt(h))
+        }
+
         val Factory = viewModelFactory {
             initializer {
                 val c = appContainer()

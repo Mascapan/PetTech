@@ -57,6 +57,15 @@ import cl.pettech.app.ui.components.ErrorBanner
 import cl.pettech.app.ui.components.FullScreenLoading
 import cl.pettech.app.ui.components.PetAvatar
 import cl.pettech.app.ui.components.PetTechTopBar
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import cl.pettech.app.data.reminders.ReminderWorker
 import cl.pettech.app.ui.screens.AccountViewModel
 
 /**
@@ -94,6 +103,22 @@ fun TutorHomeScreen(
     LifecycleResumeEffect(Unit) {
         viewModel.refresh()
         onPauseOrDispose { }
+    }
+
+    // Recordatorios de vacunas (HU-06): en Android 13+ se pide permiso una vez; luego se revisan las fechas.
+    val context = LocalContext.current
+    val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        ReminderWorker.scheduleOnce(context)
+    }
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            ReminderWorker.scheduleOnce(context)
+        }
     }
 
     Scaffold(

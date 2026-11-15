@@ -801,6 +801,120 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/pets/{id}/photo/:
+    get:
+      operationId: pets_photo_retrieve
+      description: |-
+        Foto de perfil de la mascota guardada en el servidor (DEC-031): no se pierde al cambiar de teléfono y
+        la ve el profesional autorizado. Se normaliza (JPEG, sin EXIF/GPS) igual que las fotos de la ficha.
+      summary: Ver la foto de la mascota (JPEG)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - pets
+      security:
+      - knoxApiToken: []
+      responses:
+        '200':
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+          description: ''
+    post:
+      operationId: pets_photo_create
+      description: |-
+        Foto de perfil de la mascota guardada en el servidor (DEC-031): no se pierde al cambiar de teléfono y
+        la ve el profesional autorizado. Se normaliza (JPEG, sin EXIF/GPS) igual que las fotos de la ficha.
+      summary: Subir o reemplazar la foto de la mascota
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - pets
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      security:
+      - knoxApiToken: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    put:
+      operationId: pets_photo_update
+      description: |-
+        Foto de perfil de la mascota guardada en el servidor (DEC-031): no se pierde al cambiar de teléfono y
+        la ve el profesional autorizado. Se normaliza (JPEG, sin EXIF/GPS) igual que las fotos de la ficha.
+      summary: Subir o reemplazar la foto de la mascota
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - pets
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      security:
+      - knoxApiToken: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    delete:
+      operationId: pets_photo_destroy
+      description: |-
+        Foto de perfil de la mascota guardada en el servidor (DEC-031): no se pierde al cambiar de teléfono y
+        la ve el profesional autorizado. Se normaliza (JPEG, sin EXIF/GPS) igual que las fotos de la ficha.
+      summary: Quitar la foto de la mascota
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - pets
+      security:
+      - knoxApiToken: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/professional/me/:
     get:
       operationId: professional_me_retrieve
@@ -1783,11 +1897,13 @@ components:
       enum:
       - VACCINE_LABEL
       - CARD_SCAN
+      - PET_PHOTO
       - OTHER
       type: string
       description: |-
         * `VACCINE_LABEL` - Etiqueta de vacuna o producto
         * `CARD_SCAN` - Foto del carnet
+        * `PET_PHOTO` - Foto de perfil de la mascota
         * `OTHER` - Otro respaldo
     LoginRequest:
       type: object
@@ -2014,6 +2130,11 @@ components:
           readOnly: true
           description: 'Origen de los datos del perfil: siempre declarados por el
             tutor.'
+        photo_id:
+          type: string
+          nullable: true
+          readOnly: true
+          description: Foto de perfil en el servidor (null si no tiene).
         created_at:
           type: string
           format: date-time
@@ -2029,6 +2150,7 @@ components:
       - data_origin
       - id
       - name
+      - photo_id
       - public_code
       - sex_label
       - species

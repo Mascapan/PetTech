@@ -5,6 +5,8 @@
     <!-- Ubicación solo en primer plano y al buscar veterinarias (HU-07, RNF-03). -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- Recordatorios de vacunas y controles (HU-06). Android 13+ pide permiso al usuario. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!--
         Seguridad (OWASP MASVS):

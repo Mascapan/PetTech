@@ -54,9 +54,12 @@ def today_hours_label(clinic: Clinic, moment: datetime) -> str:
     if clinic.emergency_24h:
         return "Abierto 24 horas (declarado)"
     local = timezone.localtime(moment)
-    slots = [s for s in clinic.opening_hours.all() if s.weekday == local.weekday()]
+    all_slots = list(clinic.opening_hours.all())
+    if not all_slots:
+        return "Horario no informado: consulta por teléfono"
+    slots = [s for s in all_slots if s.weekday == local.weekday()]
     if not slots:
-        return "Hoy sin horario declarado"
+        return "Hoy cerrado según horario declarado"
     return "Hoy: " + ", ".join(f"{s.opens_at:%H:%M}–{s.closes_at:%H:%M}" for s in slots)
 
 

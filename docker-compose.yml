@@ -22,7 +22,7 @@ services:
   api:
     build: ./backend-api
     command: >
-      sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+      sh -c "python manage.py migrate && python manage.py load_directory && python manage.py runserver 0.0.0.0:8000"
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.development
       DJANGO_SECRET_KEY: ${PETTECH_DEV_SECRET_KEY:?Define PETTECH_DEV_SECRET_KEY en el archivo .env}

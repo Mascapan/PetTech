@@ -36,6 +36,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -43,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -174,6 +184,8 @@ fun ClinicalRecordScreen(
                         entry = entry,
                         canCorrect = viewModel.canCorrect(entry),
                         onCorrect = { onCorrectEntry(entry.id) },
+                        thumbnail = entry.attachments.firstOrNull()?.let { ui.photos[it.id] },
+                        onNeedThumbnail = { entry.attachments.firstOrNull()?.let { viewModel.loadPhoto(it.id) } },
                     ) {
                         EntryPhotos(
                             entry = entry,
@@ -272,18 +284,27 @@ private fun TypeFilter(selected: EntryType?, onSelect: (EntryType?) -> Unit) {
     }
 }
 
+/**
+ * Antecedente de la ficha. Cerrado muestra el resumen; al tocarlo se despliega TODO el detalle
+ * (datos de la vacuna, signos vitales, SOAP, observaciones, fotos, autor y fecha de registro).
+ */
 @Composable
 private fun EntryCard(
     entry: ClinicalEntry,
     canCorrect: Boolean,
     onCorrect: () -> Unit,
+    thumbnail: ImageBitmap? = null,
+    onNeedThumbnail: () -> Unit = {},
     photos: @Composable () -> Unit = {},
 ) {
     val professional = entry.origin == EntryOrigin.PROFESSIONAL
+    var expanded by rememberSaveable(entry.id) { mutableStateOf(false) }
+    if (entry.attachments.isNotEmpty()) LaunchedEffect(entry.id) { onNeedThumbnail() }
     Card(
+        onClick = { expanded = !expanded },
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (expanded) 3.dp else 1.dp),
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -293,57 +314,136 @@ private fun EntryCard(
                 } else {
                     StatusTag("Declarado por el tutor", TagColors.GreyBg, TagColors.Grey)
                 }
+                if (entry.sourceAttachmentId != null) StatusTag("📄 Desde el carnet", TagColors.AmberBg, TagColors.Amber)
                 if (entry.type?.hasActiveFlag == true && !entry.isActive) {
                     StatusTag("No vigente", TagColors.GreyBg, TagColors.Grey)
                 }
                 if (entry.isCorrection) StatusTag("Corregido", TagColors.AmberBg, TagColors.Amber)
             }
-            Text(entry.title, style = MaterialTheme.typography.titleMedium)
-            entry.occurredOn?.let { KeyValueRow("Fecha", Validators.formatDate(it)) }
-            entry.nextDueOn?.let { KeyValueRow("Próxima fecha", Validators.formatDate(it)) }
-            entry.weightKg?.let { KeyValueRow("Peso", "${formatKg(it)} kg") }
-            if (entry.manufacturer.isNotBlank()) KeyValueRow("Laboratorio", entry.manufacturer)
-            if (entry.lotNumber.isNotBlank()) KeyValueRow("Lote / serie", entry.lotNumber)
-            entry.lotExpiresOn?.let { KeyValueRow("Vence el lote", Validators.formatDate(it)) }
-            if (entry.dose.isNotBlank()) KeyValueRow("Dosis", entry.dose)
-            val vitals = listOfNotNull(
-                entry.temperatureC?.let { "${formatKg(it)} °C" },
-                entry.heartRateBpm?.let { "FC $it lpm" },
-                entry.respiratoryRateRpm?.let { "FR $it rpm" },
-                entry.bodyConditionScore?.let { "CC $it/9" },
-            )
-            if (vitals.isNotEmpty()) KeyValueRow("Signos vitales", vitals.joinToString(" · "))
-            if (entry.anamnesis.isNotBlank()) KeyValueRow("Anamnesis", entry.anamnesis)
-            if (entry.physicalExam.isNotBlank()) KeyValueRow("Examen físico", entry.physicalExam)
-            if (entry.diagnosis.isNotBlank()) KeyValueRow("Diagnóstico", entry.diagnosis)
-            if (entry.treatment.isNotBlank()) KeyValueRow("Tratamiento", entry.treatment)
-            if (entry.sourceAttachmentId != null) {
-                StatusTag("📄 Transcrito desde la foto del carnet", TagColors.AmberBg, TagColors.Amber)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(entry.title, style = MaterialTheme.typography.titleMedium)
+                    EntrySummaryLine(entry, professional)
+                }
+                if (entry.attachments.isNotEmpty()) {
+                    // Miniatura de la foto de respaldo (etiqueta o carnet), visible sin desplegar.
+                    Box(
+                        Modifier.padding(start = 10.dp).size(56.dp).clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (thumbnail != null) {
+                            Image(thumbnail, contentDescription = "Foto de respaldo", contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize())
+                        } else {
+                            Text("📷")
+                        }
+                    }
+                }
             }
-            if (entry.notes.isNotBlank()) {
-                Text(entry.notes, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Text(
-                if (professional) {
-                    "Atendió: ${entry.authorName} · ${entry.clinicName}"
-                } else {
-                    "Registrado por: ${entry.authorName} (tutor)"
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (entry.isCorrection && entry.correctionReason.isNotBlank()) {
+            if (!expanded) {
+                val preview = listOf(entry.diagnosis, entry.notes, entry.anamnesis).firstOrNull { it.isNotBlank() }
+                if (preview != null) {
+                    Text(
+                        preview,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 Text(
-                    "Motivo de la corrección: ${entry.correctionReason}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TagColors.Amber,
+                    "Ver detalle ▾",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
                 )
-            }
-            photos()
-            if (canCorrect) {
-                TextButton(onClick = onCorrect, contentPadding = PaddingValues(0.dp)) { Text("Corregir") }
+            } else {
+                HorizontalDivider()
+                EntryDetail(entry, professional)
+                photos()
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (canCorrect) {
+                        TextButton(onClick = onCorrect, contentPadding = PaddingValues(0.dp)) { Text("Corregir") }
+                    }
+                    Spacer(Modifier.weight(1f))
+                    TextButton(onClick = { expanded = false }) { Text("Ocultar ▴") }
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun EntryDetail(entry: ClinicalEntry, professional: Boolean) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        entry.occurredOn?.let { KeyValueRow("Fecha", Validators.formatDate(it)) }
+        entry.nextDueOn?.let { KeyValueRow("Próxima fecha", Validators.formatDate(it)) }
+        entry.weightKg?.let { KeyValueRow("Peso", "${formatKg(it)} kg") }
+        if (entry.type?.hasActiveFlag == true) KeyValueRow("Vigente", if (entry.isActive) "Sí" else "No")
+
+        // Producto aplicado (vacunas, antiparasitarios, fármacos)
+        if (entry.manufacturer.isNotBlank()) KeyValueRow("Laboratorio", entry.manufacturer)
+        if (entry.lotNumber.isNotBlank()) KeyValueRow("Lote / serie", entry.lotNumber)
+        entry.lotExpiresOn?.let { KeyValueRow("Vence el lote", Validators.formatDate(it)) }
+        if (entry.dose.isNotBlank()) KeyValueRow("Dosis y frecuencia", entry.dose)
+
+        // Examen físico (S-O-A-P)
+        val vitals = listOfNotNull(
+            entry.temperatureC?.let { "T° ${formatKg(it)} °C" },
+            entry.heartRateBpm?.let { "FC $it lpm" },
+            entry.respiratoryRateRpm?.let { "FR $it rpm" },
+            entry.bodyConditionScore?.let { "CC $it/9" },
+        )
+        if (vitals.isNotEmpty()) KeyValueRow("Signos vitales", vitals.joinToString(" · "))
+        DetailBlock("S · Anamnesis", entry.anamnesis)
+        DetailBlock("O · Examen físico", entry.physicalExam)
+        DetailBlock("A · Diagnóstico", entry.diagnosis)
+        DetailBlock("P · Tratamiento e indicaciones", entry.treatment)
+        DetailBlock("Observaciones", entry.notes)
+
+        HorizontalDivider()
+        KeyValueRow(
+            if (professional) "Atendió" else "Registrado por",
+            if (professional) "${entry.authorName} · ${entry.clinicName}" else "${entry.authorName} (tutor)",
+        )
+        entry.createdAt?.let { KeyValueRow("Registrado el", Validators.formatDateTime(it)) }
+        if (entry.sourceAttachmentId != null) {
+            Text(
+                "Transcrito por el tutor desde la foto de su carnet de papel (la foto queda como respaldo).",
+                style = MaterialTheme.typography.bodySmall,
+                color = TagColors.Amber,
+            )
+        }
+        if (entry.isCorrection && entry.correctionReason.isNotBlank()) {
+            Text(
+                "Corrige una versión anterior · motivo: ${entry.correctionReason}",
+                style = MaterialTheme.typography.bodySmall,
+                color = TagColors.Amber,
+            )
+        }
+    }
+}
+
+@Composable
+private fun EntrySummaryLine(entry: ClinicalEntry, professional: Boolean) {
+    Text(
+        listOfNotNull(
+            entry.occurredOn?.let { Validators.formatDate(it) },
+            entry.nextDueOn?.let { "próxima: ${Validators.formatDate(it)}" },
+            if (professional) entry.clinicName.ifBlank { null } else "tutor",
+            entry.attachments.size.takeIf { it > 0 }?.let { "📷 $it" },
+        ).joinToString(" · "),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+/** Texto largo con su título encima (se lee completo, sin columnas estrechas). */
+@Composable
+private fun DetailBlock(label: String, text: String) {
+    if (text.isBlank()) return
+    Column {
+        Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+        Text(text, style = MaterialTheme.typography.bodyMedium)
     }
 }
 

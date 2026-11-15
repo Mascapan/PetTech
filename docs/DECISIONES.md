@@ -283,3 +283,31 @@ revisión humana y mide los campos corregidos (indicador de calidad para la defe
 reconocimiento de texto acotado a una necesidad concreta (usuarios que prefieren no digitar). Se registra como
 excepción justificada; debe validarse con el docente.
 Además se agrega la vista **"Ver como carnet"**, que replica el formato de tabla del carnet de papel.
+
+### DEC-033 — Directorio inicial de Chillán, fotos de mascotas en la nube y registros desplegables (15-11-2026)
+- **Directorio:** se cargan 15 veterinarias de Chillán y Chillán Viejo (`apps/clinics/data/directorio_chillan.json`)
+  recopiladas de fuentes públicas (sitio oficial del Hospital Clínico Veterinario UdeC, Facebook/Instagram de las
+  clínicas y directorios web como infoisinfo.cl, saludveterinaria.cl, veterianaria24horas.cl, tuveterinario.cl), con
+  la fuente y fecha en cada registro; **no desde Google Maps**. Las coordenadas se obtuvieron con Nominatim
+  (OpenStreetMap); cuando solo se ubicó la calle se indica "ubicación aproximada". Se excluyeron fuentes de baja
+  confiabilidad (listados con datos inconsistentes o sin respaldo) y la información de servicios generada
+  automáticamente por agregadores. Lo no informado queda vacío ("Horario no informado: consulta por teléfono").
+  Se carga en cada despliegue (`load_directory`, idempotente) y nunca sobrescribe a una veterinaria afiliada o que
+  confirmó sus datos. **Limitación:** son datos referenciales sin confirmar; validar por teléfono en el piloto.
+- **Foto de la mascota:** pasa del teléfono al servidor (mismo tratamiento que DEC-031), con caché local, migración
+  automática de fotos antiguas y visibilidad para el profesional autorizado. Se actualizó la política de privacidad.
+- **Ficha en la app:** cada registro se muestra resumido y se despliega al tocarlo con todo el detalle (producto,
+  signos vitales, SOAP, observaciones, fotos, autor, fecha de registro y origen).
+- Se corrigió la eliminación de una mascota con fotos (referencias protegidas entre fotos y antecedentes).
+
+### DEC-034 — Recordatorios de vacunas y controles (HU-06) con WorkManager
+Cuando la ficha tiene una **próxima fecha** (refuerzo de vacuna registrado por la veterinaria, desparasitación, control
+o fin de tratamiento), la app avisa **desde 7 días antes y una vez al día hasta la fecha**, solo entre 09:00 y 21:00
+(si el sistema ejecuta la revisión fuera de ese horario, se reprograma para las 10:00). Se implementa con
+**WorkManager** (revisión diaria que consulta la API con la sesión del tutor) y notificaciones locales: **sin Firebase
+ni servidor de push** (restricción de CLAUDE.md). Una notificación por antecedente y por día; en Android 13+ se pide
+permiso al usuario. **Limitación declarada:** Android puede retrasar el trabajo para ahorrar batería (no es una alarma
+exacta) y requiere conexión al momento de revisar.
+También: los registros transcritos del carnet guardan el texto leído y muestran la foto del carnet como respaldo; la
+ficha muestra la miniatura de la foto sin desplegar; si la ubicación está fuera de la zona del piloto (p. ej. el
+emulador), la búsqueda se hace desde el centro de Chillán.

@@ -17,6 +17,8 @@ junit = "4.13.2"
 # Fase 4: mapa (HU-10) y ubicación en primer plano (HU-07)
 playServicesLocation = "21.3.0"
 osmdroid = "6.1.20"
+# Recordatorios locales de vacunas y controles (HU-06): sin Firebase, se consulta la API una vez al día
+work = "2.9.1"
 # OCR en el dispositivo (modelo latino incluido en la app; sin Firebase ni envío de la foto a terceros, DEC-032)
 mlkitTextRecognition = "16.0.1"
 
@@ -45,6 +47,7 @@ okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor",
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkitTextRecognition" }
+androidx-work-runtime = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
 osmdroid-android = { group = "org.osmdroid", name = "osmdroid-android", version.ref = "osmdroid" }
 
 [plugins]

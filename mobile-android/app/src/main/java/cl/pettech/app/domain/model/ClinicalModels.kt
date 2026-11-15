@@ -70,6 +70,7 @@ data class ClinicalEntry(
     val attachments: List<EntryAttachment> = emptyList(),
     /** Foto del carnet de la que el tutor transcribió este antecedente (OCR). */
     val sourceAttachmentId: String? = null,
+    val createdAt: java.time.OffsetDateTime? = null,
 )
 
 /** Foto de respaldo de un antecedente (etiqueta de vacuna o carnet). */

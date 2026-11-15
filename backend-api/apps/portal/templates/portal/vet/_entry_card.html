@@ -11,7 +11,7 @@
 </dl>{% endif %}
 {% if e.notes %}<p>{{ e.notes|linebreaksbr }}</p>{% endif %}
 {% if e.photos %}<div class="inline wrap" style="margin:6px 0">{% for ph in e.photos %}<a href="{% url 'portal:vet-attachment' pet.public_code ph.pk %}" target="_blank" rel="noopener" title="{{ ph.get_kind_display }} · {{ ph.author_name }}"><img class="photo-thumb" loading="lazy" src="{% url 'portal:vet-attachment' pet.public_code ph.pk %}" alt="{{ ph.get_kind_display }}"></a>{% endfor %}</div>{% endif %}
-{% if e.source_attachment_id %}<div class="muted">📄 Transcrito por el tutor desde la foto de su carnet.</div>{% endif %}
+{% if e.source_attachment_id %}<div class="inline" style="margin:6px 0"><a href="{% url 'portal:vet-attachment' pet.public_code e.source_attachment_id %}" target="_blank" rel="noopener"><img class="photo-thumb" loading="lazy" src="{% url 'portal:vet-attachment' pet.public_code e.source_attachment_id %}" alt="Foto del carnet"></a><span class="muted">📄 Transcrito por el tutor desde la foto de su carnet (respaldo).</span></div>{% endif %}
 <div class="muted">{% if e.origin == "PROFESSIONAL" %}Atendió: {{ e.author_name }} · {{ e.clinic_name }}{% else %}Registrado por el tutor{% endif %}{% if e.correction_reason %} · Motivo de corrección: {{ e.correction_reason }}{% endif %}</div>
 {% if e.origin == "PROFESSIONAL" and e.clinic_id == membership.clinic_id %}<a class="btn small ghost" style="margin-top:8px" href="{% url 'portal:vet-correct' pet.public_code e.pk %}">Corregir</a>{% endif %}
 </div>

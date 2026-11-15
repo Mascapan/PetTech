@@ -60,6 +60,8 @@ data class Pet(
     val birthDateIsEstimated: Boolean,
     val microchipNumber: String,
     val generalNotes: String,
+    /** Foto de perfil en el servidor (null si no tiene). */
+    val photoId: String? = null,
 )
 
 /** Datos que el tutor ingresa al crear o editar una mascota. */

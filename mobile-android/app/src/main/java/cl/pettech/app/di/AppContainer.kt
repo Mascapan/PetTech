@@ -83,8 +83,8 @@ class AppContainer(context: Context) {
     val accessRepository = AccessRepository(api, errorParser)
     val clinicRepository = ClinicRepository(api, errorParser)
 
-    val petPhotoStore = PetPhotoStore(context.applicationContext)
     val photoTools = PhotoTools(context.applicationContext)
+    val petPhotoStore = PetPhotoStore(context.applicationContext, api, photoTools)
     val cardTextRecognizer = CardTextRecognizer()
     val locationProvider = LocationProvider(context.applicationContext)
 }

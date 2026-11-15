@@ -128,12 +128,18 @@ class CorrectionSerializer(ClinicalEntrySerializer):
 
 class PetSummarySerializer(serializers.ModelSerializer):
     species_label = serializers.CharField(source="get_species_display", read_only=True)
+    photo_id = serializers.SerializerMethodField()
+
+    def get_photo_id(self, obj) -> str | None:
+        att = obj.attachments.filter(kind="PET_PHOTO").order_by("-created_at").values_list("pk", flat=True).first()
+        return str(att) if att else None
+
     sex_label = serializers.CharField(source="get_sex_display", read_only=True)
 
     class Meta:
         model = Pet
         fields = ["id", "public_code", "name", "species", "species_label", "breed", "sex", "sex_label",
-                  "birth_date", "birth_date_is_estimated", "microchip_number", "general_notes"]
+                  "birth_date", "birth_date_is_estimated", "microchip_number", "general_notes", "photo_id"]
 
 
 def build_record_payload(pet: Pet, entries, *, include_pet_id: bool = True) -> dict:

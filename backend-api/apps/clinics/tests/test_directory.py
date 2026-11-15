@@ -73,3 +73,26 @@ class NetworkBadgeTests(PetTechAPITestCase):
         r = self.client.get(reverse("clinic-search"), {"lat": -36.6066, "lng": -72.1034, "network": "true"})
         self.assertEqual([c["name"] for c in r.json()["results"]], ["Afiliada"])
 
+
+
+class CuratedDirectoryTests(PetTechAPITestCase):
+    def test_carga_idempotente_y_respeta_veterinarias_confirmadas(self):
+        from apps.clinics.directory import load_curated
+
+        first = load_curated()
+        self.assertGreaterEqual(first["created"], 10)
+        self.assertEqual(Clinic.objects.filter(external_ref__startswith="dir:", account__isnull=False).count(), 0)
+        udec = Clinic.objects.get(external_ref="dir:hcv-udec-chillan")
+        self.assertEqual(udec.info_origin, "PUBLIC_UNCONFIRMED")
+        self.assertIn("hcvudec.cl", udec.source_note)
+        self.assertEqual(udec.opening_hours.filter(weekday=5).count(), 1)
+        self.assertTrue(Clinic.objects.get(external_ref="dir:vetblu").emergency_24h)
+        # Si la veterinaria se afilia y confirma sus datos, la recarga no los pisa.
+        udec.info_origin = "CONFIRMED"
+        udec.phone = "+56 42 000 0000"
+        udec.save()
+        second = load_curated()
+        self.assertEqual(second["created"], 0)
+        udec.refresh_from_db()
+        self.assertEqual(udec.phone, "+56 42 000 0000")
+        self.assertEqual(Clinic.objects.filter(external_ref__startswith="dir:").count(), first["created"])

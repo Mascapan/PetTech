@@ -47,6 +47,7 @@ fun PetDto.toDomain(): Pet {
         birthDateIsEstimated = birthDateIsEstimated,
         microchipNumber = microchipNumber,
         generalNotes = generalNotes,
+        photoId = photoId,
     )
 }
 
@@ -99,8 +100,13 @@ fun ClinicalEntryDto.toDomain(): ClinicalEntry {
         dose = dose,
         attachments = attachments.map {
             EntryAttachment(it.id, it.kindLabel.ifBlank { "Fotografía" }, it.origin == "PROFESSIONAL", it.authorName)
-        },
+        } + listOfNotNull(
+            // La foto del carnet del que se transcribió el registro también se muestra como respaldo.
+            sourceAttachment?.takeIf { id -> attachments.none { it.id == id } }
+                ?.let { EntryAttachment(it, "Foto del carnet (origen de la transcripción)", false, authorName) },
+        ),
         sourceAttachmentId = sourceAttachment,
+        createdAt = createdAt.toDateTimeOrNull(),
     )
 }
 
