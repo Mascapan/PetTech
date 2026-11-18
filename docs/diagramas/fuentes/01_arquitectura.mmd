@@ -1,0 +1,33 @@
+---
+title: 01 · Arquitectura del sistema PetTech (monolito modular)
+---
+flowchart TB
+  subgraph CLI["Clientes"]
+    APP["📱 App Android<br/>Kotlin · Jetpack Compose · MVVM<br/><i>Tutor (y profesional)</i>"]
+    WEB["💻 Portal web<br/>Django Templates · Chart.js<br/><i>Admin · Veterinaria · Profesional</i>"]
+    LAND["🌐 Página pública<br/>landing · descarga APK<br/>privacidad · eliminar cuenta"]
+  end
+  subgraph SRV["Servidor Django 5.2 (Render) — monolito modular"]
+    direction TB
+    API["API REST /api/v1<br/>DRF · OpenAPI · tokens knox"]
+    PORTAL["apps.portal<br/>vistas por rol · métricas"]
+    subgraph MOD["Módulos de dominio (services.py)"]
+      ACC["accounts<br/>usuarios · roles · Argon2id"]
+      PETS["pets<br/>mascotas · código PetTech · foto"]
+      CLI2["clinics<br/>catálogo · horario · PostGIS<br/>directorio OSM · Red PetTech"]
+      AC["access_control<br/>solicitudes · permisos 24 h<br/>bitácora inmutable"]
+      CR["clinical_records<br/>ficha SOAP · correcciones<br/>fotos (JPEG sin EXIF)"]
+      CORE["core<br/>errores · permisos · salud"]
+    end
+  end
+  DB[("PostgreSQL 16 + PostGIS 3.4<br/>datos + fotografías")]
+  APP -- "HTTPS + Token" --> API
+  WEB -- "HTTPS + sesión + CSRF" --> PORTAL
+  LAND --> PORTAL
+  API --> MOD
+  PORTAL --> MOD
+  MOD --> DB
+  APP -. "tiles del mapa" .-> OSM["OpenStreetMap<br/>(osmdroid)"]
+  APP -. "OCR en el teléfono" .-> MLK["ML Kit<br/>Text Recognition"]
+  APP -. "recordatorios locales" .-> WM["WorkManager<br/>+ notificaciones"]
+  LAND -. "descarga" .-> GH["GitHub Releases<br/>PetTech.apk"]

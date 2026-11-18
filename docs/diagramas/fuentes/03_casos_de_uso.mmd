@@ -1,0 +1,38 @@
+---
+title: 03 · Casos de uso por actor
+---
+flowchart LR
+  T(("🧑 Tutor")):::actor
+  P(("🩺 Profesional<br/>veterinario")):::actor
+  V(("🏥 Veterinaria")):::actor
+  A(("🛡️ Administrador<br/>PetTech")):::actor
+  S(("⏰ Sistema<br/>(WorkManager)")):::actor
+  subgraph SIS["PetTech"]
+    direction TB
+    UC1([Registrarse / iniciar sesión / recuperar clave])
+    UC2([Gestionar mascotas y foto])
+    UC3([Ver ficha clínica y vista carnet])
+    UC4([Declarar antecedentes y corregir])
+    UC5([Escanear carnet en papel - OCR])
+    UC6([Agregar foto de respaldo])
+    UC7([Autorizar / rechazar / revocar acceso])
+    UC8([Ver bitácora de accesos])
+    UC9([Buscar veterinarias en mapa y filtros])
+    UC10([Recibir recordatorios de vacunas])
+    UC11([Solicitar acceso con código PetTech])
+    UC12([Registrar atención SOAP / vacuna con foto])
+    UC13([Corregir registro de su veterinaria])
+    UC14([Autorizar / suspender profesionales])
+    UC15([Editar datos, horario y servicios])
+    UC16([Ver métricas de atención])
+    UC17([Crear veterinarias y afiliar del directorio])
+    UC18([Importar directorio OSM / alta manual])
+    UC19([Ver cuadros de análisis globales])
+    UC20([Cambiar contraseña])
+  end
+  T --- UC1 & UC2 & UC3 & UC4 & UC5 & UC6 & UC7 & UC8 & UC9 & UC10
+  S --- UC10
+  P --- UC11 & UC12 & UC13 & UC20
+  V --- UC14 & UC15 & UC16 & UC20
+  A --- UC17 & UC18 & UC19 & UC20
+  classDef actor fill:#00695c,color:#fff,stroke:#004d44

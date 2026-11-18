@@ -53,4 +53,8 @@ services:
         value: https://github.com/Mascapan/PetTech/releases/latest/download/PetTech.apk
       - key: PETTECH_APK_VERSION
         value: "0.4.1"
+      # Datos SIMULADOS para pruebas manuales (seed_simulacion): "1" los crea, "remove" los elimina,
+      # vacío no hace nada. Quitar antes de un piloto con usuarios reales.
+      - key: PETTECH_SIM_DATA
+        value: "1"
       # El dominio público (RENDER_EXTERNAL_HOSTNAME) lo agrega Render automáticamente.

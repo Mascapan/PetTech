@@ -1,0 +1,27 @@
+---
+title: 07 · Secuencia — registro de atención con foto de la etiqueta (portal)
+---
+sequenceDiagram
+  actor PR as Profesional
+  participant PO as VetRecordView
+  participant SER as ClinicalEntrySerializer
+  participant CR as clinical_records.services
+  participant IMG as images.normalize
+  participant DB as PostgreSQL
+  PR->>PO: POST formulario SOAP / vacuna + foto
+  PO->>PO: require_active_grant (permiso vigente)
+  PO->>SER: validar tipos, fechas, rangos de signos vitales
+  PO->>PO: mínimos por tipo (vacuna: laboratorio y lote)
+  alt datos inválidos
+    PO-->>PR: 400 · errores en el formulario
+  else foto adjunta
+    PO->>IMG: validar imagen (decodificar, ≤ 8 MB)
+    IMG-->>PO: inválida → 400 sin guardar el registro
+  end
+  PO->>CR: create_by_professional(...)
+  CR->>DB: INSERT ClinicalEntry (inmutable) + AuditEvent
+  PO->>CR: add_attachment(foto)
+  CR->>IMG: JPEG ≤ 1600 px, sin EXIF/GPS, SHA-256
+  CR->>DB: INSERT Attachment (bytea) + AuditEvent
+  PO-->>PR: "Registro guardado con su fotografía"
+  Note over DB: El tutor lo ve en la app.<br/>la próxima fecha activa los recordatorios

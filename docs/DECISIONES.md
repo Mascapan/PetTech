@@ -311,3 +311,17 @@ exacta) y requiere conexión al momento de revisar.
 También: los registros transcritos del carnet guardan el texto leído y muestran la foto del carnet como respaldo; la
 ficha muestra la miniatura de la foto sin desplegar; si la ubicación está fuera de la zona del piloto (p. ej. el
 emulador), la búsqueda se hace desde el centro de Chillán.
+
+### DEC-035 — Datos simulados verosímiles para pruebas manuales en el servidor del piloto
+Para probar a mano el flujo completo (tutor ↔ veterinario ↔ veterinaria) en el servidor desplegado se agrega
+`seed_simulacion`: 2 veterinarias de la Red PetTech (Clínica Veterinaria Los Robles y Centro Veterinario Río Ñuble),
+4 profesionales verificados, 2 cuentas de portal, 6 tutores con 13 mascotas y antecedentes declarados (algunos con
+próxima fecha cercana para probar DEC-034), ~110 consultas de los últimos 12 meses en formato SOAP (con su
+autorización del tutor ya vencida y su registro de auditoría, para que las métricas del portal tengan datos) y fotos
+de perfil opcionales desde `apps/core/data/fotos_simulacion/`. **Son datos ficticios con nombres verosímiles** (excepción acotada a la
+marca [DEMO] de `seed_demo`, que sigue siendo solo para desarrollo). Controles: en el repositorio solo hay hashes
+Argon2 (las contraseñas en claro quedan en un archivo local excluido de Git); los establecimientos llevan
+`external_ref = sim:*` y una nota de fuente "Datos simulados"; se activa con `PETTECH_SIM_DATA=1` y se elimina con
+`PETTECH_SIM_DATA=remove` (lo registrado en fichas reales no se borra: la cuenta se desactiva). **Riesgo declarado:**
+las veterinarias simuladas son visibles en la búsqueda pública; deben eliminarse antes de un piloto con tutores reales.
+Los correos @gmail.com no corresponden a buzones del equipo y el servidor no envía correos (EMAIL_BACKEND de consola).

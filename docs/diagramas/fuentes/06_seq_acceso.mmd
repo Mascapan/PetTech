@@ -1,0 +1,34 @@
+---
+title: 06 · Secuencia — solicitud y autorización de acceso a la ficha clínica
+---
+sequenceDiagram
+  actor PR as Profesional (portal)
+  participant PO as Portal web
+  participant AS as access_control.services
+  participant DB as PostgreSQL
+  actor TU as Tutor (app)
+  participant API as API REST
+  PR->>PO: Ingresa código PetTech + motivo
+  PO->>AS: request_access(profesional, código)
+  AS->>DB: ¿vínculo verificado y veterinaria en la red?
+  alt sin vínculo o veterinaria fuera de la red
+    AS-->>PO: 403 · se registra intento DENEGADO en bitácora
+  else válido
+    AS->>DB: INSERT AccessRequest (PENDIENTE, vence en 24 h)
+    AS->>DB: INSERT AuditEvent ACCESS_REQUESTED
+    PO-->>PR: "Solicitud enviada"
+  end
+  TU->>API: GET /access/requests?status=PENDING
+  API-->>TU: Solicitud (quién y desde qué veterinaria)
+  TU->>API: POST /access/requests/{id}/approve
+  API->>AS: decide(aprobar)
+  AS->>DB: APPROVED · expires_at = ahora + 24 h · AuditEvent
+  PR->>PO: Abrir ficha
+  PO->>AS: require_active_grant(profesional, código)
+  AS->>DB: ¿permiso vigente para su veterinaria?
+  AS-->>PO: OK · AuditEvent RECORD_READ
+  PO-->>PR: Ficha clínica completa
+  opt el tutor revoca
+    TU->>API: POST /access/requests/{id}/revoke
+    API->>DB: REVOKED (efecto inmediato)
+  end

@@ -1,0 +1,507 @@
+{
+ "_descripcion": "DATOS SIMULADOS para pruebas manuales del piloto (seed_simulacion). Personas, mascotas y establecimientos FICTICIOS con nombres verosímiles. Solo se guardan hashes Argon2 de las contraseñas; las contraseñas en claro están fuera del repositorio.",
+ "clinicas": [
+  {
+   "ref": "sim:clinica-los-robles",
+   "nombre": "Clínica Veterinaria Los Robles",
+   "direccion": "Av. Brasil 560",
+   "comuna": "Chillán",
+   "telefono": "+56 42 296 4810",
+   "email": "contacto.vetlosrobles@gmail.com",
+   "lat": -36.6071,
+   "lng": -72.1121,
+   "urgencias": false,
+   "urgencias_24h": false,
+   "servicios": [
+    "GENERAL",
+    "VACCINATION",
+    "SURGERY",
+    "LAB"
+   ],
+   "detalle": "Medicina preventiva, vacunación y desparasitación de perros y gatos. Cirugías programadas (esterilización, tejidos blandos). Toma de muestras con laboratorio externo, control de cachorros y pacientes geriátricos. Atención con hora agendada.",
+   "horario": {
+    "0": [
+     "09:30",
+     "19:30"
+    ],
+    "1": [
+     "09:30",
+     "19:30"
+    ],
+    "2": [
+     "09:30",
+     "19:30"
+    ],
+    "3": [
+     "09:30",
+     "19:30"
+    ],
+    "4": [
+     "09:30",
+     "19:30"
+    ],
+    "5": [
+     "10:00",
+     "14:00"
+    ]
+   },
+   "cuenta": {
+    "email": "contacto.vetlosrobles@gmail.com",
+    "nombre": "Paula Gacitúa Ortega",
+    "hash": "argon2$argon2id$v=19$m=102400,t=2,p=8$ekVOSk9xSDM5U2VwdXpITXZ5Rm9lQg$GnYdB+eBcOWAX3+fo9gIU6oXHPPLw37VYM42iFd3HNk"
+   },
+   "profesionales": [
+    {
+     "email": "fmunoz.vetlosrobles@gmail.com",
+     "nombre": "Dra. Francisca Muñoz Sepúlveda",
+     "registro": "MV-CMV 4127",
+     "hash": "argon2$argon2id$v=19$m=102400,t=2,p=8$ODZJZFBJZGxQR3lmYkpleWNCODhaeg$HEfI91vrIKq5MHWiOI+YpcaKhzSxhWwOyQKu2vP792Q"
+    },
+    {
+     "email": "ifuentes.vetlosrobles@gmail.com",
+     "nombre": "Dr. Ignacio Fuentes Parra",
+     "registro": "MV-CMV 5380",
+     "hash": "argon2$argon2id$v=19$m=102400,t=2,p=8$VHhXYXlwSjRKcHpQbVRlMHB5bUVoMA$8+XxsDbj+ZBb9Wj254OIyXMlHxfH3mx2lG8YpwT2GwI"
+    }
+   ]
+  },
+  {
+   "ref": "sim:centro-rio-nuble",
+   "nombre": "Centro Veterinario Río Ñuble",
+   "direccion": "Av. Collín 845",
+   "comuna": "Chillán",
+   "telefono": "+56 9 6243 1875",
+   "email": "contacto.vetrionuble@gmail.com",
+   "lat": -36.6137,
+   "lng": -72.0996,
+   "urgencias": true,
+   "urgencias_24h": false,
+   "servicios": [
+    "GENERAL",
+    "VACCINATION",
+    "SURGERY",
+    "IMAGING",
+    "HOSPITALIZATION",
+    "LAB"
+   ],
+   "detalle": "Urgencias en horario de atención, hospitalización diurna, ecografía y radiografía digital. Cirugía general y traumatológica, odontología (destartraje), implantación de microchip y certificados de salud para viaje.",
+   "horario": {
+    "0": [
+     "09:00",
+     "20:00"
+    ],
+    "1": [
+     "09:00",
+     "20:00"
+    ],
+    "2": [
+     "09:00",
+     "20:00"
+    ],
+    "3": [
+     "09:00",
+     "20:00"
+    ],
+    "4": [
+     "09:00",
+     "20:00"
+    ],
+    "5": [
+     "09:00",
+     "17:00"
+    ],
+    "6": [
+     "10:00",
+     "14:00"
+    ]
+   },
+   "cuenta": {
+    "email": "contacto.vetrionuble@gmail.com",
+    "nombre": "Rodrigo Sanhueza Arriagada",
+    "hash": "argon2$argon2id$v=19$m=102400,t=2,p=8$cDdkMldheE9jZVRsMllpTE9sSUtHSQ$99X/k3qa/jvJghDY0aKb7eqomRqHJdnqPQd9cA5rYzE"
+   },
+   "profesionales": [
+    {
+     "email": "criquelme.vetrionuble@gmail.com",
+     "nombre": "Dra. Constanza Riquelme Soto",
+     "registro": "MV-CMV 4862",
+     "hash": "argon2$argon2id$v=19$m=102400,t=2,p=8$blNBZjJZd1JybEwySnR2aVV1QzFBaQ$DvlCw+4xxHh4dooxSgT863ybJHBzzIMsmir1w1zGZdk"
+    },
+    {
+     "email": "mhenriquez.vetrionuble@gmail.com",
+     "nombre": "Dr. Matías Henríquez Vidal",
+     "registro": "MV-CMV 6015",
+     "hash": "argon2$argon2id$v=19$m=102400,t=2,p=8$VFg2Zkl0RlJoU3BvMDBveUNhVFo4aw$xzAwDwOxNff5MdziJIsoRg3IsiNLnNfpqsP0wAjK7U4"
+    }
+   ]
+  }
+ ],
+ "tutores": [
+  {
+   "email": "valentina.rojas.pettech@gmail.com",
+   "nombre": "Valentina Rojas Pérez",
+   "hash": "argon2$argon2id$v=19$m=102400,t=2,p=8$UE1YQ25xS054ZWp5alBUcnN3RGNpSw$nmngeh7RwUWTQnDeKIw34PW/9DvPjMGs3xx/Mgk/dh8",
+   "mascotas": [
+    {
+     "nombre": "Canela",
+     "especie": "DOG",
+     "raza": "Mestiza",
+     "sexo": "FEMALE",
+     "nacimiento": "2020-05-10",
+     "estimada": true,
+     "notas": "Rescatada en 2020. Le dan miedo los fuegos artificiales.",
+     "registros": [
+      [
+       "VACCINE",
+       "Antirrábica",
+       -358,
+       7,
+       null
+      ],
+      [
+       "VACCINE",
+       "Óctuple canina",
+       -200,
+       165,
+       null
+      ],
+      [
+       "DEWORMING",
+       "Antiparasitario interno",
+       -85,
+       5,
+       null
+      ],
+      [
+       "WEIGHT",
+       "Control de peso",
+       -30,
+       null,
+       18.4
+      ]
+     ],
+     "veterinaria": "sim:clinica-los-robles"
+    },
+    {
+     "nombre": "Simón",
+     "especie": "CAT",
+     "raza": "Doméstico pelo corto",
+     "sexo": "MALE",
+     "nacimiento": "2022-11-02",
+     "estimada": true,
+     "notas": "Gato de interior, esterilizado.",
+     "registros": [
+      [
+       "VACCINE",
+       "Triple felina",
+       -300,
+       65,
+       null
+      ],
+      [
+       "SURGERY",
+       "Esterilización",
+       -600,
+       null,
+       null
+      ]
+     ],
+     "veterinaria": "sim:clinica-los-robles"
+    }
+   ]
+  },
+  {
+   "email": "benjamin.torres.pettech@gmail.com",
+   "nombre": "Benjamín Torres Silva",
+   "hash": "argon2$argon2id$v=19$m=102400,t=2,p=8$YjhpOE5EUHZsbFR1VEw2T3o1WDVPcw$SWOcP/kfDKoLp/qf07I9/UA8SA5GnNun65/8Cprx8tA",
+   "mascotas": [
+    {
+     "nombre": "Bruno",
+     "especie": "DOG",
+     "raza": "Labrador Retriever",
+     "sexo": "MALE",
+     "nacimiento": "2019-08-12",
+     "estimada": false,
+     "notas": "Sobrepeso leve según último control.",
+     "registros": [
+      [
+       "VACCINE",
+       "Antirrábica",
+       -340,
+       25,
+       null
+      ],
+      [
+       "VACCINE",
+       "Séxtuple canina",
+       -340,
+       25,
+       null
+      ],
+      [
+       "WEIGHT",
+       "Control de peso",
+       -60,
+       null,
+       36.2
+      ]
+     ],
+     "veterinaria": "sim:centro-rio-nuble"
+    },
+    {
+     "nombre": "Pelusa",
+     "especie": "CAT",
+     "raza": "Angora",
+     "sexo": "FEMALE",
+     "nacimiento": "2020-09-01",
+     "estimada": true,
+     "notas": "Adoptada adulta. Pelo largo, se cepilla 3 veces por semana.",
+     "registros": [
+      [
+       "VACCINE",
+       "Triple felina",
+       -280,
+       85,
+       null
+      ]
+     ],
+     "veterinaria": "sim:centro-rio-nuble"
+    }
+   ]
+  },
+  {
+   "email": "catalina.morales.pettech@gmail.com",
+   "nombre": "Catalina Morales Jara",
+   "hash": "argon2$argon2id$v=19$m=102400,t=2,p=8$UWlpamZWc3NsQzNCd2tFcWhkRXhvNA$fyKxuH3x7ysvQxoj64o4FqabmHf4AtDU2+Fb14i04xg",
+   "mascotas": [
+    {
+     "nombre": "Nala",
+     "especie": "CAT",
+     "raza": "Siamés",
+     "sexo": "FEMALE",
+     "nacimiento": "2021-02-20",
+     "estimada": true,
+     "notas": "",
+     "registros": [
+      [
+       "VACCINE",
+       "Triple felina",
+       -362,
+       3,
+       null
+      ],
+      [
+       "ALLERGY",
+       "Alergia a la pulga (dermatitis)",
+       -150,
+       null,
+       null
+      ]
+     ],
+     "veterinaria": "sim:clinica-los-robles"
+    },
+    {
+     "nombre": "Max",
+     "especie": "DOG",
+     "raza": "Beagle",
+     "sexo": "MALE",
+     "nacimiento": "2021-07-14",
+     "estimada": false,
+     "notas": "Muy glotón; comida controlada.",
+     "registros": [
+      [
+       "VACCINE",
+       "Antirrábica",
+       -310,
+       55,
+       null
+      ],
+      [
+       "WEIGHT",
+       "Control de peso",
+       -15,
+       null,
+       13.1
+      ]
+     ],
+     "veterinaria": "sim:clinica-los-robles"
+    }
+   ]
+  },
+  {
+   "email": "felipe.navarrete.pettech@gmail.com",
+   "nombre": "Felipe Navarrete Ortiz",
+   "hash": "argon2$argon2id$v=19$m=102400,t=2,p=8$NGNnYTlDWktqZGlOM2k2NVEzaEJuNA$LvLoCAcPAkNFnP8Ayje5DwGyVrihzDKInRkFZYWbz5g",
+   "mascotas": [
+    {
+     "nombre": "Toby",
+     "especie": "DOG",
+     "raza": "Poodle",
+     "sexo": "MALE",
+     "nacimiento": "2014-04-01",
+     "estimada": true,
+     "notas": "Perro senior. Cardiopatía en control.",
+     "registros": [
+      [
+       "CHRONIC_CONDITION",
+       "Insuficiencia valvular mitral",
+       -400,
+       null,
+       null
+      ],
+      [
+       "MEDICATION",
+       "Pimobendan 1,25 mg cada 12 h",
+       -400,
+       null,
+       null
+      ],
+      [
+       "VACCINE",
+       "Antirrábica",
+       -330,
+       35,
+       null
+      ]
+     ],
+     "veterinaria": "sim:centro-rio-nuble"
+    },
+    {
+     "nombre": "Kira",
+     "especie": "DOG",
+     "raza": "Pastor Alemán",
+     "sexo": "FEMALE",
+     "nacimiento": "2023-01-15",
+     "estimada": false,
+     "notas": "",
+     "registros": [
+      [
+       "VACCINE",
+       "Óctuple canina",
+       -350,
+       15,
+       null
+      ],
+      [
+       "DEWORMING",
+       "Antiparasitario externo",
+       -25,
+       5,
+       null
+      ]
+     ],
+     "veterinaria": "sim:clinica-los-robles"
+    }
+   ]
+  },
+  {
+   "email": "antonia.sandoval.pettech@gmail.com",
+   "nombre": "Antonia Sandoval Medina",
+   "hash": "argon2$argon2id$v=19$m=102400,t=2,p=8$MnM4SFFYNk9SSW5JRDZETFJkYkJ1aQ$oO42VqHJDy8Kz+kr9tSSLSE/92oNLuVgsLORLDWtFMA",
+   "mascotas": [
+    {
+     "nombre": "Mila",
+     "especie": "CAT",
+     "raza": "Persa",
+     "sexo": "FEMALE",
+     "nacimiento": "2024-03-08",
+     "estimada": false,
+     "notas": "Cepillado diario.",
+     "registros": [
+      [
+       "VACCINE",
+       "Triple felina",
+       -120,
+       245,
+       null
+      ]
+     ],
+     "veterinaria": "sim:clinica-los-robles"
+    },
+    {
+     "nombre": "Chispa",
+     "especie": "DOG",
+     "raza": "Jack Russell Terrier",
+     "sexo": "FEMALE",
+     "nacimiento": "2022-12-05",
+     "estimada": false,
+     "notas": "",
+     "registros": [
+      [
+       "DEWORMING",
+       "Antiparasitario interno",
+       -88,
+       2,
+       null
+      ]
+     ],
+     "veterinaria": "sim:centro-rio-nuble"
+    }
+   ]
+  },
+  {
+   "email": "joseluis.carrasco.pettech@gmail.com",
+   "nombre": "José Luis Carrasco Bravo",
+   "hash": "argon2$argon2id$v=19$m=102400,t=2,p=8$QnhkNkNBSVlCSUhEMEg5QjQ1UUJEcw$qoMxuP5LBnZyilpIaSJLTR9NKbzdkZJ62Bid/QEVV+4",
+   "mascotas": [
+    {
+     "nombre": "Rocco",
+     "especie": "DOG",
+     "raza": "Bulldog Francés",
+     "sexo": "MALE",
+     "nacimiento": "2022-06-30",
+     "estimada": false,
+     "notas": "Braquicéfalo: evitar ejercicio con calor.",
+     "registros": [
+      [
+       "VACCINE",
+       "Antirrábica",
+       -364,
+       1,
+       null
+      ],
+      [
+       "VACCINE",
+       "Séxtuple canina",
+       -364,
+       1,
+       null
+      ]
+     ],
+     "veterinaria": "sim:centro-rio-nuble"
+    },
+    {
+     "nombre": "Lola",
+     "especie": "DOG",
+     "raza": "Golden Retriever",
+     "sexo": "FEMALE",
+     "nacimiento": "2018-03-22",
+     "estimada": false,
+     "notas": "Displasia de cadera leve diagnosticada en 2024.",
+     "registros": [
+      [
+       "CHRONIC_CONDITION",
+       "Displasia de cadera leve",
+       -700,
+       null,
+       null
+      ]
+     ],
+     "veterinaria": "sim:centro-rio-nuble"
+    },
+    {
+     "nombre": "Garfield",
+     "especie": "CAT",
+     "raza": "Exótico de pelo corto",
+     "sexo": "MALE",
+     "nacimiento": "2023-05-18",
+     "estimada": true,
+     "notas": "",
+     "registros": [],
+     "veterinaria": "sim:clinica-los-robles"
+    }
+   ]
+  }
+ ],
+ "_fotos": "Fotos opcionales de las mascotas en apps/core/data/fotos_simulacion/<Nombre>.jpg (p. ej. Canela.jpg). Solo imágenes propias o con licencia libre."
+}

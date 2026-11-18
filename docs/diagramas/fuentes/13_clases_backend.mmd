@@ -1,0 +1,97 @@
+---
+title: 13 · Clases principales del backend (modelos y servicios)
+---
+classDiagram
+  direction LR
+  class User {
+    +UUID id
+    +email
+    +role: TUTOR|PROFESSIONAL|CLINIC|ADMIN
+  }
+  class Pet {
+    +UUID id
+    +public_code PT-XXXX-XXXX
+    +species
+    +birth_date
+  }
+  class Clinic {
+    +location: Point
+    +services[]
+    +info_origin
+    +accepts_pettech_records
+    +in_pettech_network()
+  }
+  class OpeningHour {
+    +weekday
+    +opens_at
+    +closes_at
+  }
+  class ProfessionalMembership {
+    +is_verified
+    +license_number
+  }
+  class AccessRequest {
+    +status
+    +expires_at
+    +effective_status()
+    +is_active_grant()
+  }
+  class AuditEvent {
+    <<solo inserción>>
+    +action
+    +result
+    +created_at 
+  }
+  class ClinicalEntry {
+    <<inmutable>>
+    +entry_type
+    +SOAP + signos vitales
+    +producto/lote
+    +corrects
+  }
+  class Attachment {
+    <<inmutable>>
+    +kind
+    +content: bytea JPEG
+    +sha256
+  }
+  class AccessServices {
+    +request_access()
+    +decide()
+    +revoke()
+    +require_active_grant()
+    +audit()
+  }
+  class RecordServices {
+    +create_by_owner()
+    +create_by_professional()
+    +correct()
+    +add_attachment()
+  }
+  class ClinicServices {
+    +search()
+    +is_open_at()
+    +today_hours_label()
+  }
+  class Directory {
+    +import_osm()
+    +load_curated()
+    +parse_opening_hours()
+  }
+  User "1" --> "*" Pet : owner
+  User "1" --> "0..1" Clinic : account
+  Clinic "1" --> "*" OpeningHour
+  Clinic "1" --> "*" ProfessionalMembership
+  User "1" --> "*" ProfessionalMembership : professional
+  Pet "1" --> "*" AccessRequest
+  Clinic "1" --> "*" AccessRequest
+  Pet "1" --> "*" ClinicalEntry
+  ClinicalEntry "0..1" --> "0..1" ClinicalEntry : corrects
+  ClinicalEntry "1" --> "*" Attachment : fotos
+  Attachment "0..1" --> "*" ClinicalEntry : source_attachment
+  AccessServices ..> AccessRequest
+  AccessServices ..> AuditEvent
+  RecordServices ..> ClinicalEntry
+  RecordServices ..> Attachment
+  ClinicServices ..> Clinic
+  Directory ..> Clinic

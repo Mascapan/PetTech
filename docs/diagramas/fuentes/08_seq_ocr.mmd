@@ -1,0 +1,26 @@
+---
+title: 08 · Secuencia — transcripción asistida del carnet en papel (OCR)
+---
+sequenceDiagram
+  actor TU as Tutor
+  participant SCR as CardScanScreen
+  participant VM as CardScanViewModel
+  participant MLK as ML Kit (en el teléfono)
+  participant PRS as CardTextParser
+  participant API as API REST
+  TU->>SCR: Fotografiar o elegir imagen
+  SCR->>VM: onImage uri
+  VM->>MLK: recognize bitmap
+  MLK-->>VM: líneas + posiciones
+  VM->>PRS: reconstruye filas y extrae datos
+  PRS-->>VM: propuestas (vacuna, fechas, lote)
+  VM-->>SCR: revisión editable
+  TU->>SCR: corrige, desmarca, agrega filas
+  TU->>SCR: Guardar
+  VM->>VM: valida cada fila (fechas, título)
+  VM->>API: POST attachments (kind=CARD_SCAN)
+  API-->>VM: id de la foto
+  loop por cada fila confirmada
+    VM->>API: POST entries (source_attachment = id, texto leído en notas)
+  end
+  VM-->>TU: "Se agregaron N registros · corregiste M datos"

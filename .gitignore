@@ -57,3 +57,6 @@ respaldos/
 # --- Kotlin (caché del compilador) y archivos temporales locales ---
 .kotlin/
 _to_delete/
+
+# --- Datos simulados: contraseñas en claro (solo local) ---
+simulacion/

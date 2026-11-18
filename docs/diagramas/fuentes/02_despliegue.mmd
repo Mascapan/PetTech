@@ -1,0 +1,25 @@
+---
+title: 02 · Diagrama de despliegue (piloto)
+---
+flowchart TB
+  subgraph PHONE["Teléfono Android 9+ (tutor)"]
+    APK["PetTech.apk firmado<br/>(caché cifrada de sesión, fotos en caché)"]
+  end
+  subgraph PC["Navegador (admin / veterinaria / profesional)"]
+    BR["Portal web"]
+  end
+  subgraph RENDER["Render · región Virginia"]
+    subgraph WEBS["Web Service: pettech-api (Docker)"]
+      START["start_production.sh<br/>migrate → collectstatic → ensure_admin → load_directory"]
+      GUN["gunicorn · 2 workers<br/>Django + WhiteNoise"]
+    end
+    PG[("Render PostgreSQL 16<br/>+ PostGIS · red privada")]
+  end
+  GHUB["GitHub<br/>Mascapan/PetTech<br/>código + Releases (APK)"]
+  OSMT["Servidores de tiles<br/>OpenStreetMap"]
+  APK -- "HTTPS :443 /api/v1" --> GUN
+  BR -- "HTTPS :443 /portal" --> GUN
+  GUN -- "DATABASE_URL (interna)" --> PG
+  GHUB -- "deploy automático (render.yaml)" --> WEBS
+  APK -- "descarga APK" --> GHUB
+  APK -- "tiles" --> OSMT

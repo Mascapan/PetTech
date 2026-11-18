@@ -1,0 +1,26 @@
+---
+title: 09 · Secuencia — recordatorios de vacunas (HU-06)
+---
+sequenceDiagram
+  participant WM as WorkManager (diario ~10:00)
+  participant W as ReminderWorker
+  participant POL as ReminderPolicy
+  participant API as API REST
+  participant N as Notificaciones Android
+  WM->>W: doWork()
+  W->>POL: ¿horario prudente (09–21 h)?
+  alt fuera de horario
+    W->>WM: reprogramar a las 10:00
+  else dentro de horario
+    W->>W: ¿sesión de tutor y permiso de notificaciones?
+    W->>API: GET mascotas
+    loop por mascota
+      W->>API: GET ficha clínica (resumen: próximas fechas)
+      loop por próxima fecha
+        W->>POL: días restantes (0..7)
+        alt corresponde y no se avisó hoy
+          W->>N: "Luna: Antirrábica — faltan 3 días"
+        end
+      end
+    end
+  end

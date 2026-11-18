@@ -1,0 +1,33 @@
+---
+title: 04 · Arquitectura de la app Android (MVVM + repositorios + DI manual)
+---
+flowchart TB
+  subgraph UI["Capa de presentación (ui/)"]
+    SC["Pantallas Compose<br/>Login · Mis mascotas · Ficha mascota · Ficha clínica<br/>Escanear carnet · Buscar veterinaria · Accesos"]
+    VM["ViewModels<br/>StateFlow&lt;UiState&gt;"]
+    NAV["PetTechNavigation<br/>(Navigation Compose)"]
+  end
+  subgraph DOM["Dominio (domain/)"]
+    MOD["Modelos: Pet · ClinicalEntry · Clinic · AccessRequest"]
+    VAL["Validators"]
+    OCR["CardTextParser<br/>(reglas, probado)"]
+    POL["ReminderPolicy<br/>(7 días · 09–21 h)"]
+  end
+  subgraph DATA["Datos (data/)"]
+    REPO["Repositorios<br/>Auth · Pet · ClinicalRecord · Access · Clinic"]
+    API["ApiService (Retrofit)<br/>+ AuthInterceptor + ApiErrorParser"]
+    SES["SessionManager<br/>token cifrado (Keystore)"]
+    LOC["LocationProvider (GPS)"]
+    PH["PetPhotoStore · PhotoTools<br/>(caché + compresión)"]
+    REC["CardTextRecognizer (ML Kit)"]
+    WK["ReminderWorker (WorkManager)"]
+  end
+  DI["AppContainer<br/>(inyección manual)"]
+  NAV --> SC --> VM
+  VM --> REPO & PH & REC & LOC
+  VM --> MOD & VAL & OCR
+  REPO --> API
+  API --> SES
+  WK --> REPO & POL
+  DI -. crea .-> REPO & API & SES & PH & REC & LOC
+  API -- "HTTPS JSON" --> BACK[("API PetTech")]

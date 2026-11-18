@@ -1,0 +1,21 @@
+---
+title: 12 · Actividad — búsqueda de veterinarias
+---
+flowchart TB
+  A([Tutor toca Buscar veterinaria]) --> B{¿Permiso de ubicación?}
+  B -- sí --> C[Obtener ubicación GPS]
+  B -- no --> D[Usar centro de Chillán + aviso]
+  C --> E{¿Se obtuvo?}
+  E -- no --> D
+  E -- sí --> F[Consultar API con radio y filtros]
+  D --> F
+  F --> G{¿Hay resultados?}
+  G -- sí --> H[Ordenar: abiertas según horario → cercanía]
+  G -- "no y lejos de Chillán > 40 km" --> D
+  G -- no --> I[Sugerir ampliar radio / quitar filtros]
+  H --> J[Mapa OSM: ✓ Red PetTech · gris directorio · ubicación]
+  J --> K{Acción}
+  K -- tocar marcador --> L[Tarjeta seleccionada]
+  K -- mantener presionado --> M[Buscar desde ese punto] --> F
+  K -- Ver ficha --> N[Horario · servicios · contacto · fuente]
+  K -- Cómo llegar --> O[App de mapas externa]

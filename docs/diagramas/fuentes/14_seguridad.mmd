@@ -1,0 +1,21 @@
+---
+title: 14 · Control de acceso a la ficha clínica (defensa en profundidad)
+---
+flowchart TB
+  R([Solicitud a la ficha]) --> A{¿Autenticado?<br/>token knox / sesión}
+  A -- no --> X1[401 / login]
+  A -- sí --> B{¿Rol permitido?<br/>IsTutor / IsProfessional}
+  B -- no --> X2[403]
+  B -- tutor --> C{¿La mascota es suya?<br/>queryset filtrado por owner}
+  C -- no --> X3[404 · no revela existencia]
+  C -- sí --> OK1[Lee / declara / corrige lo propio]
+  B -- profesional --> D{¿Vínculo verificado con veterinaria<br/>activa y en la Red PetTech?}
+  D -- no --> X4[403 · evento DENEGADO en bitácora]
+  D -- sí --> E{¿Permiso del tutor vigente<br/>para ESA veterinaria? 24 h}
+  E -- no --> X5[404 / volver a solicitar]
+  E -- sí --> OK2[Lee y registra · corrige solo<br/>registros de su veterinaria]
+  OK1 --> L[(AuditEvent)]
+  OK2 --> L
+  X4 --> L
+  N["ADMIN no tiene acceso clínico · Contraseñas Argon2id · HTTPS/HSTS<br/>Fotos re-codificadas sin EXIF · registros clínicos inmutables"]:::note
+  classDef note fill:#fff1cc,stroke:#e0a100

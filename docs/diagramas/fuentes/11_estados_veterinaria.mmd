@@ -1,0 +1,17 @@
+---
+title: 11 · Ciclo de vida de una veterinaria en el catálogo
+---
+stateDiagram-v2
+  state "Directorio (no afiliada)<br/>fuente pública no confirmada" as DIR
+  state "Red PetTech<br/>datos aún no confirmados" as RNC
+  state "Red PetTech<br/>confirmado por el establecimiento" as RC
+  state "Información antigua<br/>(> 30 días)" as OLD
+  state "Suspendida<br/>(no visible)" as SUS
+  [*] --> DIR: importación OSM / alta manual / load_directory
+  DIR --> RNC: admin afilia (crea cuenta)
+  [*] --> RNC: admin crea veterinaria de la red
+  RNC --> RC: veterinaria publica sus datos
+  RC --> OLD: pasan 30 días sin actualizar
+  OLD --> RC: vuelve a publicar
+  RC --> SUS: admin suspende
+  SUS --> RC: admin habilita

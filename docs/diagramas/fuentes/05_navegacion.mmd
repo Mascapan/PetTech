@@ -1,0 +1,23 @@
+---
+title: 05 · Mapa de navegación de la app (según boceto)
+---
+flowchart LR
+  L["Inicio de sesión"] --> R["Registro"]
+  L --> F["Recuperar contraseña"]
+  L -->|tutor| H["Mis mascotas"]
+  L -->|profesional| PH["Inicio profesional<br/>(código PetTech)"]
+  H --> N["Nueva mascota"]
+  H --> D["Ficha de la mascota<br/>foto · código · accesos"]
+  H --> AC["Solicitudes de acceso 🔔"]
+  H --> S["Buscar veterinaria<br/>mapa + lista + filtros"]
+  H --> CTA["Mi cuenta<br/>salir · eliminar cuenta"]
+  D --> E["Editar mascota"]
+  D --> FC["Ficha clínica<br/>historial ▾ detalle · vista carnet"]
+  D --> AC
+  FC --> AE["Agregar / corregir antecedente"]
+  FC --> SCN["Escanear carnet (OCR)"]
+  FC --> FOTO["Foto de respaldo<br/>cámara / galería"]
+  S --> CD["Ficha de la veterinaria<br/>horario · servicios · contacto"]
+  CD --> RUTA["Cómo llegar / llamar<br/>(apps externas)"]
+  PH --> FCP["Ficha clínica autorizada"]
+  FCP --> AEP["Registrar atención"]

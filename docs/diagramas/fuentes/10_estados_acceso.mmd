@@ -1,0 +1,18 @@
+---
+title: 10 · Estados de una solicitud de acceso (AccessRequest)
+---
+stateDiagram-v2
+  [*] --> PENDIENTE: profesional solicita
+  PENDIENTE --> AUTORIZADA: tutor aprueba (24 h)
+  PENDIENTE --> RECHAZADA: tutor rechaza
+  PENDIENTE --> EXPIRADA: sin respuesta al vencer el plazo
+  AUTORIZADA --> REVOCADA: tutor revoca
+  AUTORIZADA --> EXPIRADA: pasan 24 h
+  RECHAZADA --> [*]
+  REVOCADA --> [*]
+  EXPIRADA --> [*]
+  note right of AUTORIZADA
+    Solo en este estado el profesional
+    lee y registra en la ficha.
+    Cada acción queda en la bitácora.
+  end note
